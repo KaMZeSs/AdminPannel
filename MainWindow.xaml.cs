@@ -150,7 +150,7 @@ namespace AdminPannel
                 current_id = CurrentCategory.id;
             }
 
-            using (var conn = NpgsqlConnectionManager.Instance.GetConnection())
+            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
             {
                 var categories = await conn.QueryAsExpandoAsync("SELECT * FROM categories");
 
@@ -223,7 +223,7 @@ namespace AdminPannel
 
             try
             {
-                using (var conn = NpgsqlConnectionManager.Instance.GetConnection())
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
                 {
                     string sql = "DELETE FROM categories WHERE id = @id";
 
@@ -304,7 +304,7 @@ namespace AdminPannel
 
             try
             {
-                using (var conn = NpgsqlConnectionManager.Instance.GetConnection())
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
                 {
                     string sql = "UPDATE categories SET name = @new_name WHERE id = @id";
 
@@ -354,7 +354,7 @@ namespace AdminPannel
 
             try
             {
-                using (var conn = NpgsqlConnectionManager.Instance.GetConnection())
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
                 {
                     string sql = "INSERT INTO categories (name) VALUES (@name) RETURNING id";
 
@@ -442,7 +442,7 @@ namespace AdminPannel
 
         private async Task UpdateProducts(int category_id)
         {
-            using (var conn = NpgsqlConnectionManager.Instance.GetConnection())
+            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
             {
                 var cmd = this.CreateProductSQL();
 

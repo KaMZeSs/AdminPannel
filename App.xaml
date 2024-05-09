@@ -6,7 +6,6 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <local:DynamicObjectWrapperConverter x:Key="DynamicObjectWrapperConverter" />
             <local:LengthToVisibilityConverter x:Key="LengthToVisibilityConverter" />
             <local:BoolToActiveConverter x:Key="BoolToActiveConverter" />
 

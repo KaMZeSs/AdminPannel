@@ -19,6 +19,21 @@ namespace AdminPannel
 
             var list = new List<ExpandoObject>();
 
+            //await Task.WhenAll(results.Select(async row =>
+            //{
+            //    dynamic expando = new ExpandoObject();
+            //    var expandoDict = (IDictionary<string, object>)expando;
+            //    foreach (var property in row)
+            //    {
+            //        expandoDict[property.Key] = property.Value;
+            //    }
+
+            //    lock (list)
+            //    {
+            //        list.Add(expando);
+            //    }
+            //}));
+
             foreach (var row in results)
             {
                 dynamic expando = new ExpandoObject();
@@ -31,6 +46,21 @@ namespace AdminPannel
             }
 
             return list;
+        }
+
+        public static async Task<IEnumerable<dynamic>> QueryFirstAsExpandoAsync(
+            this IDbConnection connection, string sql, object? param = null)
+        {
+            var result = await connection.QueryFirstAsync<dynamic>(sql: sql, param: param);
+
+            dynamic expando = new ExpandoObject();
+            var expandoDict = (IDictionary<string, object>)expando;
+            foreach (var property in result)
+            {
+                expandoDict[property.Key] = property.Value;
+            }
+
+            return expando;
         }
     }
 

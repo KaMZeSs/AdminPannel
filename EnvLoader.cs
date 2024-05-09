@@ -12,20 +12,18 @@ namespace AdminPannel
     {
         public static void LoadFromResource()
         {
-            // Получаем имя ресурса для файла .env
+            // Имя ресурса для файла .env
             string resourceName = "AdminPannel..env";
 
             // Используем Assembly для доступа к встраиваемым ресурсам
             Assembly assembly = Assembly.GetExecutingAssembly();
             using (var stream = assembly.GetManifestResourceStream(resourceName))
             {
-                if (stream is null) return;
+                if (stream is null) throw new Exception("No .env in resources");
                 using (StreamReader reader = new StreamReader(stream))
                 {
-                    // Читаем содержимое файла
                     string envContent = reader.ReadToEnd();
 
-                    // Разбиваем на строки и устанавливаем переменные среды
                     string[] lines = envContent.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
                     foreach (string line in lines)
                     {
