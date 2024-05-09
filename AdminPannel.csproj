@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove=".env" />
+    <None Remove="Assets\Cancel.png" />
+    <None Remove="Assets\Confirm.png" />
+    <None Remove="Assets\Edit.png" />
+    <None Remove="Assets\Refresh.png" />
+    <None Remove="Assets\Trash.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="morelinq" Version="4.2.0" />
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include=".env">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <Resource Include="Assets\Cancel.png" />
+    <Resource Include="Assets\Confirm.png" />
+    <Resource Include="Assets\Edit.png" />
+    <Resource Include="Assets\Refresh.png" />
+    <Resource Include="Assets\Trash.png" />
+  </ItemGroup>
+
+</Project>
