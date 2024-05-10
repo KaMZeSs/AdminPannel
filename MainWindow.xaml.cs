@@ -45,16 +45,6 @@ namespace AdminPannel
 
             _new_category = String.Empty;
             ProductsFilter = new ExpandoObject();
-            ProductsFilter.articul = null;
-            ProductsFilter.name = null;
-            ProductsFilter.current_price_from = null;
-            ProductsFilter.current_price_to = null;
-            ProductsFilter.default_price_from = null;
-            ProductsFilter.default_price_to = null;
-            ProductsFilter.available_quantity_from = null;
-            ProductsFilter.available_quantity_to = null;
-            ProductsFilter.total_quantity_from = null;
-            ProductsFilter.total_quantity_to = null;
         }
 
         #region Menu_Grid
@@ -583,34 +573,16 @@ namespace AdminPannel
                 }
             }
 
-            object data;
+            if (ProductsFilter is not null)
+            {
+                var exp = (ExpandoObject)ProductsFilter;
+                dynamic data = exp.Copy();
+                data.category_id = selected_category_id;
 
-            if (ProductsShouldBeFiltered & ProductsFilter is not null)
-            {
-                data = new
-                {
-                    category_id = selected_category_id,
-                    ProductsFilter.articul,
-                    ProductsFilter.name,
-                    ProductsFilter.current_price_from,
-                    ProductsFilter.current_price_to,
-                    ProductsFilter.default_price_from,
-                    ProductsFilter.default_price_to,
-                    ProductsFilter.available_quantity_from,
-                    ProductsFilter.available_quantity_to,
-                    ProductsFilter.total_quantity_from,
-                    ProductsFilter.total_quantity_to
-                };
-            }
-            else
-            {
-                data = new
-                {
-                    category_id = selected_category_id
-                };
+                return (sql, data);
             }
 
-            return (sql, data);
+            return (sql, new { category_id = selected_category_id });
         }
 
         private async Task UpdateProducts(bool ProductsShouldBeFiltered = false)
@@ -695,7 +667,7 @@ namespace AdminPannel
 
         private void ViewSelectedProduct_Button_Click(object sender, RoutedEventArgs e)
         {
-
+            
         }
 
         private void CreateNewProduct_Button_Click(object sender, RoutedEventArgs e)
