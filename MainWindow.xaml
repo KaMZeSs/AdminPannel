@@ -153,8 +153,9 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <Border BorderThickness="1px" BorderBrush="LightGray">
@@ -201,7 +202,7 @@
                 </Grid>
             </Border>
 
-            <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" ShowsPreview="True"/>
+            <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
 
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
@@ -209,7 +210,12 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <DataGrid x:Name="Products_DataGrid" ItemsSource="{Binding Products}" FontSize="16" AutoGenerateColumns="False">
+                <DataGrid x:Name="Products_DataGrid" ItemsSource="{Binding Products}" 
+                          FontSize="16" AutoGenerateColumns="False"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          EnableColumnVirtualization="False"
+                          EnableRowVirtualization="True">
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding id}" IsReadOnly="True">
                             <DataGridTextColumn.Header>
@@ -275,22 +281,28 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="0" Content="Удалить выбранные товары" Margin="5" IsEnabled="True" Padding="5"
+                    <Button Grid.Column="0" Margin="5" Padding="5" Width="203"
                             Click="DeleteSelectedProducts_Button_Click">
                         <Button.Style>
                             <Style BasedOn="{StaticResource Button_Style}" TargetType="Button">
+                                <Setter Property="Content" Value="Удалить выбранные товары" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=Products_DataGrid}" Value="0">
                                         <Setter Property="IsEnabled" Value="False" />
+                                        <Setter Property="Content" Value="Удалить выбранный товар" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=Products_DataGrid}" Value="1">
+                                        <Setter Property="Content" Value="Удалить выбранный товар" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
                     </Button>
-                    <Button Grid.Column="1" Content="Открыть подробную информацию" Margin="5" Padding="5" IsEnabled="False"
+                    <Button Grid.Column="1" Content="Открыть подробную информацию" Margin="5" Padding="5"
                             Click="ViewSelectedProduct_Button_Click">
                         <Button.Style>
                             <Style BasedOn="{StaticResource Button_Style}" TargetType="Button">
+                                <Setter Property="IsEnabled" Value="False" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=Products_DataGrid}" Value="1">
                                         <Setter Property="IsEnabled" Value="True" />
@@ -301,105 +313,125 @@
                     </Button>
                     <Button Style="{StaticResource Button_Style}" Content="Создать новый товар" Margin="5" Padding="5" Grid.Column="2"
                             Click="CreateNewProduct_Button_Click"/>
-
                 </Grid>
 
             </Grid>
 
-            <Grid Grid.Column="3">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+            <GridSplitter Grid.Column="3" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
 
-                <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Фильтр"/>
-
-                <Grid Grid.Row="1" Margin="5, 0">
+            <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="4">
+                <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Margin="0, 5">
-                        <TextBlock Text="Артикул" FontSize="16" Margin="0, 0, 0, 5"/>
-                        <TextBox FontSize="16" Text="{Binding ProductsFilter.articul}"/>
-                    </StackPanel>
+                    <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Фильтр"/>
 
-                    <StackPanel Grid.Row="1" Margin="0, 5">
-                        <TextBlock Text="Название" FontSize="16" Margin="0, 0, 0, 5"/>
-                        <TextBox FontSize="16" Text="{Binding ProductsFilter.name}"/>
-                    </StackPanel>
+                    <Grid Grid.Row="1" Margin="5, 0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="2" Margin="0, 5">
-                        <TextBlock Text="Текущая цена" FontSize="16" Margin="0, 0, 0, 5"/>
-                        <Grid Height="Auto">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" FontSize="16" Text="{Binding ProductsFilter.current_price_from}"/>
-                            <TextBox Grid.Column="2" FontSize="16" Text="{Binding ProductsFilter.current_price_to}"/>
+                        <StackPanel Grid.Row="0" Margin="0, 5">
+                            <TextBlock Text="Артикул" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <TextBox FontSize="16" Text="{Binding ProductsFilter.articul, Converter={StaticResource StringToIntConverter}}"
+                                     PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                        </StackPanel>
 
-                            <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
-                        </Grid>
-                    </StackPanel>
+                        <StackPanel Grid.Row="1" Margin="0, 5">
+                            <TextBlock Text="Название" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <TextBox FontSize="16" Text="{Binding ProductsFilter.name, Converter={StaticResource TextToSerchableConverter}}"/>
+                        </StackPanel>
 
-                    <StackPanel Grid.Row="3" Margin="0, 5">
-                        <TextBlock Text="Исходная цена" FontSize="16" Margin="0, 0, 0, 5"/>
-                        <Grid Height="Auto">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" FontSize="16" Text="{Binding ProductsFilter.default_price_from}"/>
-                            <TextBox Grid.Column="2" FontSize="16" Text="{Binding ProductsFilter.default_price_to}"/>
+                        <StackPanel Grid.Row="2" Margin="0, 5">
+                            <TextBlock Text="Текущая цена" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <Grid Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" FontSize="16" 
+                                         Text="{Binding ProductsFilter.current_price_from, Converter={StaticResource StringToIntConverter}}"
+                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                                <TextBox Grid.Column="2" FontSize="16" 
+                                         Text="{Binding ProductsFilter.current_price_to, Converter={StaticResource StringToIntConverter}}"
+                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
 
-                            <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
-                        </Grid>
-                    </StackPanel>
+                                <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
+                            </Grid>
+                        </StackPanel>
 
-                    <StackPanel Grid.Row="4" Margin="0, 5">
-                        <TextBlock Text="Свободное количество" FontSize="16" Margin="0, 0, 0, 5"/>
-                        <Grid Height="Auto">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" FontSize="16" Text="{Binding ProductsFilter.available_quantity_from}"/>
-                            <TextBox Grid.Column="2" FontSize="16" Text="{Binding ProductsFilter.available_quantity_to}"/>
+                        <StackPanel Grid.Row="3" Margin="0, 5">
+                            <TextBlock Text="Исходная цена" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <Grid Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" FontSize="16" 
+                                         Text="{Binding ProductsFilter.default_price_from, Converter={StaticResource StringToIntConverter}}"
+                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                                <TextBox Grid.Column="2" FontSize="16" 
+                                         Text="{Binding ProductsFilter.default_price_to, Converter={StaticResource StringToIntConverter}}"
+                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
 
-                            <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
-                        </Grid>
-                    </StackPanel>
+                                <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
+                            </Grid>
+                        </StackPanel>
 
-                    <StackPanel Grid.Row="5" Margin="0, 5">
-                        <TextBlock Text="Общее количество" FontSize="16" Margin="0, 0, 0, 5"/>
-                        <Grid Height="Auto">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" FontSize="16" Text="{Binding ProductsFilter.total_quantity_from}"/>
-                            <TextBox Grid.Column="2" FontSize="16" Text="{Binding ProductsFilter.total_quantity_to}"/>
+                        <StackPanel Grid.Row="4" Margin="0, 5">
+                            <TextBlock Text="Свободное количество" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <Grid Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" FontSize="16" 
+                                         Text="{Binding ProductsFilter.available_quantity_from, Converter={StaticResource StringToIntConverter}}"
+                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                                <TextBox Grid.Column="2" FontSize="16" 
+                                         Text="{Binding ProductsFilter.available_quantity_to, Converter={StaticResource StringToIntConverter}}"
+                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
 
-                            <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
-                        </Grid>
-                    </StackPanel>
+                                <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
+                            </Grid>
+                        </StackPanel>
 
-                    <Button Grid.Row="7" Style="{StaticResource Button_Style}" Click="ProductsFilter_Button_Click" Content="Поиск" Margin="5" Padding="5" Height="Auto"/>
+                        <StackPanel Grid.Row="5" Margin="0, 5">
+                            <TextBlock Text="Общее количество" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <Grid Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" FontSize="16" 
+                                         Text="{Binding ProductsFilter.total_quantity_from, Converter={StaticResource StringToIntConverter}}"
+                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                                <TextBox Grid.Column="2" FontSize="16" 
+                                         Text="{Binding ProductsFilter.total_quantity_to, Converter={StaticResource StringToIntConverter}}"
+                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+
+                                <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <Button Grid.Row="7" Style="{StaticResource Button_Style}" Click="ProductsFilter_Button_Click" Content="Поиск" Margin="5" Padding="5" Height="Auto"/>
+                    </Grid>
                 </Grid>
-            </Grid>
+            </Border>
         </Grid>
 
         <Grid Name="SpecialOffers_Grid" Grid.Row="1" Visibility="Collapsed">

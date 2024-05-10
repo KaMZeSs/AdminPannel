@@ -17,9 +17,9 @@ namespace AdminPannel
         {
             var results = await connection.QueryAsync<dynamic>(sql: sql, param: param);
 
-            var list = new List<ExpandoObject>();
+            var list = new List<ExpandoObject>(results.Count());
 
-            //await Task.WhenAll(results.Select(async row =>
+            //await Task.WhenAll(results.AsParallel().Select(async row =>
             //{
             //    dynamic expando = new ExpandoObject();
             //    var expandoDict = (IDictionary<string, object>)expando;
@@ -28,16 +28,14 @@ namespace AdminPannel
             //        expandoDict[property.Key] = property.Value;
             //    }
 
-            //    lock (list)
-            //    {
-            //        list.Add(expando);
-            //    }
+            //    list.Add(expando);
             //}));
 
             foreach (var row in results)
             {
                 dynamic expando = new ExpandoObject();
                 var expandoDict = (IDictionary<string, object>)expando;
+
                 foreach (var property in row)
                 {
                     expandoDict[property.Key] = property.Value;

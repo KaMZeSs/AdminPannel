@@ -14,7 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-
+using System.Windows.Threading;
 
 using Dapper;
 
@@ -43,12 +43,18 @@ namespace AdminPannel
                 { this.Products_Grid, this.OnProductSelected }
             };
 
-            refreshByGrid = new Dictionary<Grid, Func<Task>>()
-            {
-                { this.Products_Grid, this.OnProductSelected }
-            };
             _new_category = String.Empty;
             ProductsFilter = new ExpandoObject();
+            ProductsFilter.articul = null;
+            ProductsFilter.name = null;
+            ProductsFilter.current_price_from = null;
+            ProductsFilter.current_price_to = null;
+            ProductsFilter.default_price_from = null;
+            ProductsFilter.default_price_to = null;
+            ProductsFilter.available_quantity_from = null;
+            ProductsFilter.available_quantity_to = null;
+            ProductsFilter.total_quantity_from = null;
+            ProductsFilter.total_quantity_to = null;
         }
 
         #region Menu_Grid
@@ -76,7 +82,6 @@ namespace AdminPannel
         }
 
         Dictionary<Grid, Func<Task>> onGridChange;
-        Dictionary<Grid, Func<Task>> refreshByGrid;
 
         private Grid? GridByName(string name)
         {
@@ -139,7 +144,8 @@ namespace AdminPannel
         {
             await UpdateCategories();
 
-            // if has filter attr
+            if (ProductsFilter is null)
+                return;
         }
 
         private async Task UpdateCategories()
@@ -158,9 +164,10 @@ namespace AdminPannel
                 allCategory.id = -1;
                 allCategory.name = "Все";
 
-                var tempList = new List<dynamic>();
-
-                tempList.Add(allCategory);
+                var tempList = new List<dynamic>
+                {
+                    allCategory
+                };
 
                 tempList.AddRange(categories);
 
@@ -179,9 +186,8 @@ namespace AdminPannel
         {
             var selectedCategory = (sender as ListView)?.SelectedItem;
             if (selectedCategory != null)
-            {
-                var id = (int)(selectedCategory as dynamic).id;
-                await UpdateProducts(id);
+            { 
+                await UpdateProducts();
             }
         }
 
@@ -397,8 +403,7 @@ namespace AdminPannel
         }
 
         public ObservableCollection<object> Products { get; set; } = new();
-
-        private (String sql, object? data) CreateProductSQL()
+        private (String sql, object? data) CreateProductSQL(bool ProductsShouldBeFiltered = false)
         {
             var selected_category_id = CurrentCategory?.id ?? -1;
 
@@ -427,24 +432,192 @@ namespace AdminPannel
 		                        oi.product_id
                         ) oi ON p.id = oi.product_id";
 
+            bool isWhere = false;
+
             if (selected_category_id is not -1)
             {
                 sql += "\nWHERE p.category_id = @category_id";
+                isWhere = true;
             }
 
-            var data = new
+            if (ProductsShouldBeFiltered & ProductsFilter is not null)
             {
-                category_id = selected_category_id
-            };
+                var expandoDict = (IDictionary<string, object>)ProductsFilter;
+                var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);
+
+                foreach (var kvp in filter)
+                {
+                    switch (kvp.Key)
+                    {
+                        case "articul":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE p.id = @articul";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND p.id = @articul";
+                            }
+                            break;
+                        }
+                        case "name":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE p.name LIKE @name";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND p.name LIKE @name";
+                            }
+                            break;
+                        }
+                        case "current_price_from":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE COALESCE(so.new_price, p.price) >= @current_price_from";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND COALESCE(so.new_price, p.price) >= @current_price_from";
+                            }
+                            break;
+                        }
+                        case "current_price_to":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE COALESCE(so.new_price, p.price) <= @current_price_to";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND COALESCE(so.new_price, p.price) >= @current_price_to";
+                            }
+                            break;
+                        }
+                        case "default_price_from":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE p.price >= @default_price_from";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND p.price >= @default_price_from";
+                            }
+                            break;
+                        }
+                        case "default_price_to":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE p.price <= @default_price_to";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND p.price <= @default_price_to";
+                            }
+                            break;
+                        }
+                        case "available_quantity_from":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE p.quantity >= @available_quantity_from";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND p.quantity >= @available_quantity_from";
+                            }
+                            break;
+                        }
+                        case "available_quantity_to":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE p.quantity <= @available_quantity_to";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND p.quantity <= @available_quantity_to";
+                            }
+                            break;
+                        }
+                        case "total_quantity_from":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE p.quantity + COALESCE(oi.total_ordered, 0) >= @total_quantity_from";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND p.quantity + COALESCE(oi.total_ordered, 0) >= @total_quantity_from";
+                            }
+                            break;
+                        }
+                        case "total_quantity_to":
+                        {
+                            if (!isWhere)
+                            {
+                                sql += "\nWHERE p.quantity + COALESCE(oi.total_ordered, 0) <= @total_quantity_to";
+                                isWhere = true;
+                            }
+                            else
+                            {
+                                sql += " AND p.quantity + COALESCE(oi.total_ordered, 0) <= @total_quantity_to";
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            object data;
+
+            if (ProductsShouldBeFiltered & ProductsFilter is not null)
+            {
+                data = new
+                {
+                    category_id = selected_category_id,
+                    ProductsFilter.articul,
+                    ProductsFilter.name,
+                    ProductsFilter.current_price_from,
+                    ProductsFilter.current_price_to,
+                    ProductsFilter.default_price_from,
+                    ProductsFilter.default_price_to,
+                    ProductsFilter.available_quantity_from,
+                    ProductsFilter.available_quantity_to,
+                    ProductsFilter.total_quantity_from,
+                    ProductsFilter.total_quantity_to
+                };
+            }
+            else
+            {
+                data = new
+                {
+                    category_id = selected_category_id
+                };
+            }
 
             return (sql, data);
         }
 
-        private async Task UpdateProducts(int category_id)
+        private async Task UpdateProducts(bool ProductsShouldBeFiltered = false)
         {
             await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
             {
-                var cmd = this.CreateProductSQL();
+                var cmd = this.CreateProductSQL(ProductsShouldBeFiltered);
 
                 var products = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
 
@@ -452,9 +625,72 @@ namespace AdminPannel
             }
         }
 
-        private void DeleteSelectedProducts_Button_Click(object sender, RoutedEventArgs e)
+        private async void DeleteSelectedProducts_Button_Click(object sender, RoutedEventArgs e)
         {
+            var selected_products = Products_DataGrid.SelectedItems.Cast<dynamic>();
 
+            if (selected_products is null)
+                return;
+
+            if (selected_products.Count() is 0)
+                return;
+
+            var count = selected_products.Count();
+
+            var to_view = String.Join('\n', selected_products.Take(10).Select(x => $"[{x.id}] {x.name}"));
+            if (count > 10)
+                to_view += "\n...";
+
+            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данны{(count is 1 ? "й" : "е")} товар{(count is 1 ? "" : "ы")}?\n\n{to_view}",
+                                "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning) is not MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "DELETE FROM products WHERE id = ANY(@ids)";
+
+                    var data = new
+                    {
+                        ids = selected_products.Select(x => (int)x.id).ToArray()
+                    };
+
+                    int rowsAffected = await conn.ExecuteAsync(sql, data);
+
+                    foreach (var item in selected_products)
+                    {
+                        Products.Remove(item);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "SELECT product_id FROM order_items WHERE product_id = ANY(@ids) GROUP BY product_id";
+
+                    var data = new
+                    {
+                        ids = selected_products.Select(x => (int)x.id).ToArray()
+                    };
+
+                    var ids = await conn.QueryAsync<int>(sql, data);
+
+                    var failed = selected_products.Where(x => ids.Contains((int)x.id)).ToList();
+
+                    to_view = String.Join('\n', failed.Take(10).Select(x => $"[{x.id}] {x.name}"));
+                    if (count > 10)
+                        to_view += "\n...";
+
+                    MessageBox.Show($"Невозможно удалить товар{(ids.Count() is 1 ? "" : "ы")}, к которому привязаны заказы:\n\n{to_view}", 
+                        $"Ошибка удаления товар{(ids.Count() is 1 ? "а" : "ов")}", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                
+            }
         }
 
         private void ViewSelectedProduct_Button_Click(object sender, RoutedEventArgs e)
@@ -466,11 +702,13 @@ namespace AdminPannel
         {
 
         }
-        private void ProductsFilter_Button_Click(object sender, RoutedEventArgs e)
+
+        private async void ProductsFilter_Button_Click(object sender, RoutedEventArgs e)
         {
             if (ProductsFilter is null)
                 return;
 
+            await UpdateProducts(ProductsShouldBeFiltered: true);
         }
 
         #endregion
@@ -491,6 +729,18 @@ namespace AdminPannel
             foreach (var item in items)
             {
                 collection.Add(item);
+            }
+        }
+
+        private void TextBoxInt_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            foreach (char c in e.Text)
+            {
+                if (!char.IsDigit(c))
+                {
+                    e.Handled = true;
+                    break;
+                }
             }
         }
 
