@@ -6,10 +6,11 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <local:LengthToVisibilityConverter x:Key="LengthToVisibilityConverter" />
             <local:BoolToActiveConverter x:Key="BoolToActiveConverter"/>
             <local:StringToIntConverter x:Key="StringToIntConverter"/>
             <local:TextToSerchableConverter x:Key="TextToSerchableConverter"/>
+            <local:ObjectChangedConverter x:Key="ObjectChangedConverter"/>
+            <local:MultiObjectConverter x:Key="MultiObjectConverter"/>
 
             <!--Window-->
             <Style x:Key="Window_Style" TargetType="{x:Type Window}">

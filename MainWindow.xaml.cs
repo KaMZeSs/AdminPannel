@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using System.Windows.Shell;
 using System.Windows.Threading;
 
 using Dapper;
@@ -46,6 +47,48 @@ namespace AdminPannel
             _new_category = String.Empty;
             ProductsFilter = new ExpandoObject();
         }
+
+        #region Service Things
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void TextBoxInt_PreviewTextChanged(object sender, TextChangedEventArgs e)
+        {
+            var tbox = sender as TextBox;
+            if (tbox is null)
+                return;
+
+            var maxIntLen = 10;
+
+            var ss = tbox.SelectionStart;
+
+            String cleanText = new (tbox.Text.Where(Char.IsDigit).Take(maxIntLen).ToArray());
+            if (Int32.TryParse(cleanText, out var data))
+            {
+                tbox.Text = data.ToString();
+            }
+            else
+            {
+                String vs = new (Enumerable.SkipLast(cleanText, 1).ToArray());
+                tbox.Text = vs;
+            }
+            tbox.SelectionStart = ss;
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            var vs = onGridChange.First().Key;
+            this.ChangeGrid(vs);
+
+            
+        }
+
+        #endregion
 
         #region Menu_Grid
 
@@ -124,11 +167,21 @@ namespace AdminPannel
 
         #endregion
 
-        #region Products
+        #region Products Grid
         
         #region Categories
 
-        public ObservableCollection<object> Categories { get; set; } = new();
+        public ObservableCollection<object> _categories = new();
+        public ObservableCollection<object> Categories
+        {
+            get { return _categories; }
+            set
+            {
+                _categories.Clear();
+                _categories = value;
+                OnPropertyChanged("Categories");
+            }
+        }
 
         private async Task OnProductSelected()
         {
@@ -166,9 +219,10 @@ namespace AdminPannel
                     item.isEditing = false;
                 }
 
-                UpdateObservableCollection(Categories, tempList);
+                Categories = new ObservableCollection<object>(tempList);
 
-                CurrentCategory = Categories.First(x => (x as dynamic).id == current_id);
+                if (Categories.Count(x => (x as dynamic).id == current_id) is not 0)
+                    CurrentCategory = Categories.First(x => (x as dynamic).id == current_id);
             }
         }
 
@@ -392,7 +446,16 @@ namespace AdminPannel
             }
         }
 
-        public ObservableCollection<object> Products { get; set; } = new();
+        public ObservableCollection<object> _products = new();
+        public ObservableCollection<object> Products
+        {
+            get { return _products; }
+            set
+            {
+                _products = value;
+                OnPropertyChanged("Products");
+            }
+        }
         private (String sql, object? data) CreateProductSQL(bool ProductsShouldBeFiltered = false)
         {
             var selected_category_id = CurrentCategory?.id ?? -1;
@@ -573,6 +636,8 @@ namespace AdminPannel
                 }
             }
 
+            sql += "\nORDER BY p.id";
+
             if (ProductsFilter is not null)
             {
                 var exp = (ExpandoObject)ProductsFilter;
@@ -593,7 +658,7 @@ namespace AdminPannel
 
                 var products = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
 
-                UpdateObservableCollection(Products, products);
+                Products = new ObservableCollection<object>(products);
             }
         }
 
@@ -667,7 +732,12 @@ namespace AdminPannel
 
         private void ViewSelectedProduct_Button_Click(object sender, RoutedEventArgs e)
         {
-            
+            dynamic selected_product = Products_DataGrid.SelectedItem;
+            if (selected_product is null)
+                return;
+            var window = new ProductInfoWindow(selected_product, false);
+
+            window.ShowDialog();
         }
 
         private void CreateNewProduct_Button_Click(object sender, RoutedEventArgs e)
@@ -687,44 +757,5 @@ namespace AdminPannel
 
 
         #endregion
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        private void UpdateObservableCollection(ObservableCollection<object> collection, IEnumerable<object> items)
-        {
-            collection.Clear();
-            foreach (var item in items)
-            {
-                collection.Add(item);
-            }
-        }
-
-        private void TextBoxInt_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            foreach (char c in e.Text)
-            {
-                if (!char.IsDigit(c))
-                {
-                    e.Handled = true;
-                    break;
-                }
-            }
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            var vs = onGridChange.First().Key;
-            this.ChangeGrid(vs);
-
-            // Получаем представление коллекции элементов
-            ICollectionView view = CollectionViewSource.GetDefaultView(Products);
-            // Устанавливаем сортировку по первому столбцу
-            view.SortDescriptions.Add(new SortDescription("id", ListSortDirection.Ascending));
-        }
     }
 }

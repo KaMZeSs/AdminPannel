@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:AdminPannel"
         mc:Ignorable="d"
         
-        DataContext="{Binding RelativeSource={RelativeSource Self}}"
+        
 
         Style="{StaticResource Window_Style}"
         
@@ -183,16 +183,23 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBox x:Name="NewCategoryTextBox" Text="{Binding NewCategory, Mode=TwoWay}"
-                                 VerticalAlignment="Center" FontSize="18" Margin="5" />
+                                 VerticalAlignment="Center" FontSize="18" Margin="5" Height="28" />
 
                         <TextBlock x:Name="PlaceholderTextBlock" Text="Новая категория"
                                    IsHitTestVisible="False" VerticalAlignment="Center" Margin="10,0,5,0"
                                    Foreground="LightGray"
-                                   FontSize="18"
-                                   Visibility="{
-                                       Binding ElementName=NewCategoryTextBox, 
-                                       Path=Text.Length, 
-                                       Converter={StaticResource LengthToVisibilityConverter}, ConverterParameter=0}"/>
+                                   FontSize="18">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Text.Length, ElementName=NewCategoryTextBox}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
 
                         <Button x:Name="AddNewCategory_Button" Grid.Column="1" Background="LightGray" BorderThickness="0"
                                 Margin="5" Click="CreateNewCategory_Click">
@@ -215,7 +222,8 @@
                           VirtualizingPanel.IsVirtualizing="True"
                           VirtualizingPanel.VirtualizationMode="Recycling"
                           EnableColumnVirtualization="False"
-                          EnableRowVirtualization="True">
+                          EnableRowVirtualization="True"
+                          MouseDoubleClick="ViewSelectedProduct_Button_Click">
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding id}" IsReadOnly="True">
                             <DataGridTextColumn.Header>
@@ -341,94 +349,283 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Margin="0, 5">
+                        <Grid Grid.Row="0" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
                             <TextBlock Text="Артикул" FontSize="16" Margin="0, 0, 0, 5"/>
-                            <TextBox FontSize="16" Text="{Binding ProductsFilter.articul, Converter={StaticResource StringToIntConverter}}"
-                                     PreviewTextInput="TextBoxInt_PreviewTextInput"/>
-                        </StackPanel>
+                            <TextBox Grid.Row="1" FontSize="16" Name="Product_Articul_Filter_TextBox"
+                                     Text="{Binding ProductsFilter.articul, Converter={StaticResource StringToIntConverter}}"
+                                     TextChanged="TextBoxInt_PreviewTextChanged"/>
+                            <TextBlock Grid.Row="1" Text="Артикул"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=Product_Articul_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
 
-                        <StackPanel Grid.Row="1" Margin="0, 5">
+                        <Grid Grid.Row="1" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
                             <TextBlock Text="Название" FontSize="16" Margin="0, 0, 0, 5"/>
-                            <TextBox FontSize="16" Text="{Binding ProductsFilter.name, Converter={StaticResource TextToSerchableConverter}}"/>
-                        </StackPanel>
+                            <TextBox FontSize="16" Grid.Row="1" Name="Product_Name_Filter_TextBox"
+                                     Text="{Binding ProductsFilter.name, Converter={StaticResource TextToSerchableConverter}}"/>
+                            <TextBlock Grid.Row="1" Text="Название"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=Product_Name_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
 
-                        <StackPanel Grid.Row="2" Margin="0, 5">
+                        <Grid Grid.Row="2" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            
                             <TextBlock Text="Текущая цена" FontSize="16" Margin="0, 0, 0, 5"/>
-                            <Grid Height="Auto">
+                            <Grid Grid.Row="1" Height="Auto">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition/>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" FontSize="16" 
+                                <TextBox Grid.Column="0" FontSize="16" Name="Product_CurrentPriceFrom_Filter_TextBox"
                                          Text="{Binding ProductsFilter.current_price_from, Converter={StaticResource StringToIntConverter}}"
-                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
-                                <TextBox Grid.Column="2" FontSize="16" 
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+                                <TextBox Grid.Column="2" FontSize="16" Name="Product_CurrentPriceTo_Filter_TextBox"
                                          Text="{Binding ProductsFilter.current_price_to, Converter={StaticResource StringToIntConverter}}"
-                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Product_CurrentPriceFrom_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="До"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Product_CurrentPriceTo_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
                                 <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
                             </Grid>
-                        </StackPanel>
+                        </Grid>
 
-                        <StackPanel Grid.Row="3" Margin="0, 5">
+                        <Grid Grid.Row="3" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
                             <TextBlock Text="Исходная цена" FontSize="16" Margin="0, 0, 0, 5"/>
-                            <Grid Height="Auto">
+                            <Grid Grid.Row="1" Height="Auto">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition/>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" FontSize="16" 
+                                <TextBox Grid.Column="0" FontSize="16" Name="Product_DefaultPriceFrom_Filter_TextBox"
                                          Text="{Binding ProductsFilter.default_price_from, Converter={StaticResource StringToIntConverter}}"
-                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
-                                <TextBox Grid.Column="2" FontSize="16" 
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+                                <TextBox Grid.Column="2" FontSize="16" Name="Product_DefaultPriceTo_Filter_TextBox"
                                          Text="{Binding ProductsFilter.default_price_to, Converter={StaticResource StringToIntConverter}}"
-                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Product_DefaultPriceFrom_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="До"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Product_DefaultPriceTo_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
                                 <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
                             </Grid>
-                        </StackPanel>
+                        </Grid>
 
-                        <StackPanel Grid.Row="4" Margin="0, 5">
+                        <Grid Grid.Row="4" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            
                             <TextBlock Text="Свободное количество" FontSize="16" Margin="0, 0, 0, 5"/>
-                            <Grid Height="Auto">
+                            <Grid Grid.Row="1" Height="Auto">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition/>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" FontSize="16" 
+                                <TextBox Grid.Column="0" FontSize="16" Name="Product_AvailableQuantityFrom_Filter_TextBox"
                                          Text="{Binding ProductsFilter.available_quantity_from, Converter={StaticResource StringToIntConverter}}"
-                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
-                                <TextBox Grid.Column="2" FontSize="16" 
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+                                <TextBox Grid.Column="2" FontSize="16" Name="Product_AvailableQuantityTo_Filter_TextBox"
                                          Text="{Binding ProductsFilter.available_quantity_to, Converter={StaticResource StringToIntConverter}}"
-                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Product_AvailableQuantityFrom_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="До"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Product_AvailableQuantityTo_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
                                 <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
                             </Grid>
-                        </StackPanel>
+                        </Grid>
 
-                        <StackPanel Grid.Row="5" Margin="0, 5">
+                        <Grid Grid.Row="5" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            
                             <TextBlock Text="Общее количество" FontSize="16" Margin="0, 0, 0, 5"/>
-                            <Grid Height="Auto">
+                            <Grid Grid.Row="1" Height="Auto">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition/>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" FontSize="16" 
+                                <TextBox Grid.Column="0" FontSize="16" Name="Product_TotalQuantityFrom_Filter_TextBox"
                                          Text="{Binding ProductsFilter.total_quantity_from, Converter={StaticResource StringToIntConverter}}"
-                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
-                                <TextBox Grid.Column="2" FontSize="16" 
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+                                <TextBox Grid.Column="2" FontSize="16" Name="Product_TotalQuantityTo_Filter_TextBox"
                                          Text="{Binding ProductsFilter.total_quantity_to, Converter={StaticResource StringToIntConverter}}"
-                                         PreviewTextInput="TextBoxInt_PreviewTextInput"/>
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Product_TotalQuantityFrom_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="До"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Product_TotalQuantityTo_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
                                 <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
                             </Grid>
-                        </StackPanel>
+                        </Grid>
 
-                        <Button Grid.Row="7" Style="{StaticResource Button_Style}" Click="ProductsFilter_Button_Click" Content="Поиск" Margin="5" Padding="5" Height="Auto"/>
+                        <Button Grid.Row="7" Style="{StaticResource Button_Style}" 
+                                Click="ProductsFilter_Button_Click" Content="Поиск" 
+                                Margin="5" Padding="5" Height="Auto"/>
                     </Grid>
                 </Grid>
             </Border>
