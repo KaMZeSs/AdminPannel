@@ -21,5 +21,14 @@ namespace AdminPannel
 
             return expando;
         }
+
+        public static void UpdateFrom(this ExpandoObject original, ExpandoObject data)
+        {
+            var expandoDict = (IDictionary<string, object>)original;
+            foreach (var property in data)
+            {
+                expandoDict[property.Key] = property.Value;
+            }
+        }
     }
 }

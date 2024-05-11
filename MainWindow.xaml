@@ -12,7 +12,7 @@
         
         Loaded="Window_Loaded"
         
-        Title="MainWindow" Height="720" Width="1366">
+        Title="MainWindow" Height="720" Width="1470">
 
     <Window.Resources>
 
@@ -278,6 +278,28 @@
                                 <TextBlock Text="Активность спец-предложений" TextAlignment="Center" TextWrapping="Wrap"/>
                             </DataGridTextColumn.Header>
                         </DataGridTextColumn>
+                        <!--<DataGridTextColumn Binding="{Binding category_name}" CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="100">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="Категория" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>-->
+                        <DataGridTemplateColumn SortMemberPath="category_name" Width="100">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">
+                                    <Style.Setters>
+                                        <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+                                    </Style.Setters>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding category_name}" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="Категория" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
 

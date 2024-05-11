@@ -464,14 +464,17 @@ namespace AdminPannel
                         @"SELECT
 	                        p.id,
 	                        p.name,
-	                        COALESCE(so.new_price, p.price) current_price,
+                            COALESCE(ca.id, -1) as category_id,
+                            COALESCE(ca.name, '') as category_name,
+	                        COALESCE((p.price - p.price * so.discount / 100), p.price)::integer current_price,
 	                        p.price,
-	                        so.new_price IS NOT NULL AS now_spec,
+	                        so.discount IS NOT NULL AS now_spec,
 	                        p.quantity AS available_quantity,
                             p.quantity + COALESCE(oi.total_ordered, 0) AS total_quantity
                         FROM
 	                        products p
                         LEFT JOIN special_offers so ON p.id = so.product_id AND LOCALTIMESTAMP BETWEEN so.start_datetime AND so.end_datetime
+                        LEFT JOIN categories ca ON p.category_id = ca.id
                         LEFT JOIN (
 	                        SELECT
 		                        oi.product_id,

@@ -6,14 +6,28 @@
         xmlns:local="clr-namespace:AdminPannel"
         mc:Ignorable="d"
         Title="ProductInfoWindow" Height="500" Width="800"
-        Closing="Window_Closing">
-    <Grid>
+        Closing="Window_Closing"
+        Loaded="Window_Loaded">
+    <Grid >
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Информация о товаре" FontSize="24" HorizontalAlignment="Center" Margin="5"/>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Информация о товаре" FontSize="24" HorizontalAlignment="Center" Margin="5"/>
+            
+            <Button x:Name="Refresh_Button" Grid.Column="1"
+                    Visibility="Visible" Margin="2,2" Click="Refresh_Button_Click">
+                <Image Height="32" Source="Assets/Refresh.png"/>
+            </Button>
+        </Grid>
+        
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -28,17 +42,21 @@
                         <RowDefinition Height="Auto"/>
                         <!--Название-->
                         <RowDefinition Height="Auto"/>
-                        <!--Текущая и исходная цена-->
+                        <!--Исходная цена-->
                         <RowDefinition Height="Auto"/>
-                        <!--Свободное и общее количество-->
+                        <!--Текущая цена-->
+                        <RowDefinition Height="Auto"/>
+                        <!--Свободное количество-->
+                        <RowDefinition Height="Auto"/>
+                        <!--Общее количество-->
                         <RowDefinition Height="Auto"/>
                         <!--Категория-->
                         <RowDefinition Height="Auto"/>
                         <!--Описание-->
-                        <RowDefinition/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Visibility="{Binding CreationVisibility}">
+                    <Grid Grid.Row="0" Visibility="{Binding ViewingVisibility}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition/>
@@ -61,19 +79,19 @@
                                  Text="{Binding ProductInfo.name, UpdateSourceTrigger=PropertyChanged}"
                                  MaxLines="5" MaxLength="200"/>
 
-                        <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
-                                Click="Name_Confirm_Button_Click" Visibility="{Binding CreationVisibility}">
+                        <Button Grid.Column="2" BorderThickness="0" Margin="5, 7, 2, 0" Height="21" VerticalAlignment="Top"
+                                Click="Name_Confirm_Button_Click" Visibility="{Binding ViewingVisibility}">
                             <Button.IsEnabled>
                                 <MultiBinding Converter="{StaticResource MultiObjectConverter}">
                                     <Binding Path="ProductInfo.name"/>
                                     <Binding Path="OriginalObject.name"/>
                                 </MultiBinding>
                             </Button.IsEnabled>
-                            <Image  Source="Assets/Confirm.png"/>
+                            <Image Source="Assets/Confirm.png"/>
                         </Button>
 
-                        <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
-                                Click="Name_Decline_Button_Click" Visibility="{Binding CreationVisibility}">
+                        <Button Grid.Column="3" BorderThickness="0" Margin="5, 7, 2, 0" Height="21" VerticalAlignment="Top"
+                                Click="Name_Decline_Button_Click" Visibility="{Binding ViewingVisibility}">
                             <Button.IsEnabled>
                                 <MultiBinding Converter="{StaticResource MultiObjectConverter}">
                                     <Binding Path="ProductInfo.name"/>
@@ -84,22 +102,196 @@
                         </Button>
                     </Grid>
 
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Исходная цена: " FontSize="16" Margin="5, 7"/>
+                        <TextBox Grid.Column="1" TextWrapping="Wrap" FontSize="16" Margin="5, 7, 0, 7"
+                                 Text="{Binding ProductInfo.price, Converter={StaticResource StringToIntConverter}, UpdateSourceTrigger=PropertyChanged}"
+                                 MaxLines="5" MaxLength="200"
+                                 TextChanged="TextBoxInt_PreviewTextChanged"/>
+
+                        <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                Click="Price_Confirm_Button_Click" Visibility="{Binding ViewingVisibility}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                    <Binding Path="ProductInfo.price"/>
+                                    <Binding Path="OriginalObject.price"/>
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                            <Image Source="Assets/Confirm.png"/>
+                        </Button>
+
+                        <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                Click="Price_Decline_Button_Click" Visibility="{Binding ViewingVisibility}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                    <Binding Path="ProductInfo.price"/>
+                                    <Binding Path="OriginalObject.price"/>
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                            <Image Source="Assets/Cancel.png"/>
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="3" Visibility="{Binding ViewingVisibility}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Текущая цена: " FontSize="16" Margin="5, 7"/>
+                        <TextBlock Grid.Column="1" Text="{Binding ProductInfo.current_price}" FontSize="16" Margin="5, 7"/>
+                    </Grid>
+
+                    <Grid Grid.Row="4" Visibility="{Binding ViewingVisibility}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Свободное количество: " FontSize="16" Margin="5, 7"/>
+                        <TextBox Grid.Column="1" TextWrapping="Wrap" FontSize="16" Margin="5, 7, 0, 7"
+                                 Text="{Binding ProductInfo.available_quantity, Converter={StaticResource StringToIntConverter}, UpdateSourceTrigger=PropertyChanged}"
+                                 MaxLines="5" MaxLength="200"
+                                 TextChanged="TextBoxInt_PreviewTextChanged"/>
+
+                        <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                Click="AvailableQuantity_Confirm_Button_Click" Visibility="{Binding ViewingVisibility}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                    <Binding Path="ProductInfo.available_quantity"/>
+                                    <Binding Path="OriginalObject.available_quantity"/>
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                            <Image Source="Assets/Confirm.png"/>
+                        </Button>
+
+                        <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                Click="AvailableQuantity_Decline_Button_Click" Visibility="{Binding ViewingVisibility}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                    <Binding Path="ProductInfo.available_quantity"/>
+                                    <Binding Path="OriginalObject.available_quantity"/>
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                            <Image Source="Assets/Cancel.png"/>
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="5" Visibility="{Binding ViewingVisibility}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Общее количество: " FontSize="16" Margin="5, 7"/>
+                        <TextBlock Grid.Column="1" Text="{Binding ProductInfo.total_quantity}" FontSize="16" Margin="5, 7"/>
+                    </Grid>
+
+                    <Grid Grid.Row="6" Visibility="{Binding ViewingVisibility}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Категория: " FontSize="16" Margin="5, 7"/>
+
+                        <ComboBox Grid.Column="1" FontSize="16" Margin="5, 7, 0, 7"
+                                  SelectedItem="{Binding CurrentCategory, Mode=TwoWay}"
+                                  ItemsSource="{Binding Categories}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Grid.Column="0" Text="{Binding name}" FontSize="18" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                Click="Category_Confirm_Button_Click" Visibility="{Binding ViewingVisibility}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                    <Binding Path="ProductInfo.category_id"/>
+                                    <Binding Path="OriginalObject.category_id"/>
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                            <Image Source="Assets/Confirm.png"/>
+                        </Button>
+
+                        <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                Click="Category_Decline_Button_Click" Visibility="{Binding ViewingVisibility}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                    <Binding Path="ProductInfo.category_id"/>
+                                    <Binding Path="OriginalObject.category_id"/>
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                            <Image Source="Assets/Cancel.png"/>
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="7" Visibility="{Binding ViewingVisibility}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Название: " FontSize="16" Margin="5, 7"/>
+                        <TextBox Grid.Column="1" TextWrapping="Wrap" FontSize="16" Margin="5, 7, 0, 7"
+                                 Text="{Binding ProductInfo.description, UpdateSourceTrigger=PropertyChanged}"
+                                 MaxLength="1000"/>
+
+                        <Button Grid.Column="2" BorderThickness="0" Margin="5, 7, 2, 0" Height="21" VerticalAlignment="Top"
+                                Click="Description_Confirm_Button_Click" Visibility="{Binding ViewingVisibility}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                    <Binding Path="ProductInfo.description"/>
+                                    <Binding Path="OriginalObject.description"/>
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                            <Image Source="Assets/Confirm.png"/>
+                        </Button>
+
+                        <Button Grid.Column="3" BorderThickness="0" Margin="5, 7, 2, 0" Height="21" VerticalAlignment="Top"
+                                Click="Description_Decline_Button_Click" Visibility="{Binding ViewingVisibility}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                    <Binding Path="ProductInfo.description"/>
+                                    <Binding Path="OriginalObject.description"/>
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                            <Image Source="Assets/Cancel.png"/>
+                        </Button>
+                    </Grid>
                 </Grid>
 
             </Border>
-            
-            
+
 
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
+                    <!--Текущая акция-->
+                    <!--Можно завершить заранее-->
                     <RowDefinition/>
-                    <RowDefinition/>
+                    <!--Запланированные акции -->
+                    <!--Можно отменить (полностью удаляет из бд)-->
+                    <!--Можно создать новую-->
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                
-            </Grid>
-            
-        </Grid>        
 
+            </Grid>
+
+        </Grid>
     </Grid>
 </Window>
