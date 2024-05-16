@@ -11,6 +11,7 @@
             <local:TextToSerchableConverter x:Key="TextToSerchableConverter"/>
             <local:ObjectChangedConverter x:Key="ObjectChangedConverter"/>
             <local:MultiObjectConverter x:Key="MultiObjectConverter"/>
+            <local:TextBlockMaxWidthConverter x:Key="TextBlockMaxWidthConverter"/>
 
             <!--Window-->
             <Style x:Key="Window_Style" TargetType="{x:Type Window}">

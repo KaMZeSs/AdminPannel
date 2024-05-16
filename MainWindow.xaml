@@ -21,47 +21,47 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ListViewItem">
                         <Border x:Name="Border" Background="{TemplateBinding Background}" BorderThickness="0">
-                            <Grid Margin="0, 2.5">
+                             <Grid Margin="0, 2.5">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
                                 <!-- TextBlock для отображения названия категории -->
-                                <TextBlock x:Name="CategoryNameTextBlock" Grid.Column="0" 
-                                           Text="{Binding name}" FontSize="18" />
+                                <TextBlock x:Name="CategoryNameTextBlock" Grid.Column="0"
+                                           Text="{Binding name}" FontSize="18" TextTrimming="CharacterEllipsis"/>
 
                                 <!-- TextBox для редактирования названия категории -->
-                                <TextBox x:Name="CategoryNameTextBox" Grid.Column="0" 
+                                <TextBox x:Name="CategoryNameTextBox" Grid.Column="0" TextWrapping="NoWrap"
                                          Text="{Binding name, UpdateSourceTrigger=PropertyChanged}"
-                                         Visibility="Collapsed" FontSize="18" />
+                                         Visibility="Collapsed" FontSize="18"/>
 
-                                <Button x:Name="Category_Delete_Button" Grid.Column="1" 
-                                        Background="{TemplateBinding Background}" BorderThickness="0"
-                                        Visibility="Collapsed" Margin="5, 0, 2, 0" Click="DeleteCategory_Button_Click">
-                                    <Image Height="18" Source="Assets/Trash.png"/>
-                                </Button>
+                                <WrapPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button x:Name="Category_Delete_Button"
+                                            Background="{TemplateBinding Background}" BorderThickness="0"
+                                            Visibility="Visible" Margin="5, 0, 2, 0" Click="DeleteCategory_Button_Click">
+                                        <Image Height="18" Source="Assets/Trash.png"/>
+                                    </Button>
 
-                                <Button x:Name="Category_Edit_Button" Grid.Column="2" 
-                                        Background="{TemplateBinding Background}" BorderThickness="0"
-                                        Visibility="Collapsed" Margin="0, 0, 5, 0" Click="EditCategory_Button_Click">
-                                    <Image Height="18" Source="Assets/Edit.png"/>
-                                </Button>
+                                    <Button x:Name="Category_Edit_Button"
+                                            Background="{TemplateBinding Background}" BorderThickness="0"
+                                            Visibility="Visible" Margin="0, 0, 5, 0" Click="EditCategory_Button_Click">
+                                        <Image Height="18" Source="Assets/Edit.png"/>
+                                    </Button>
 
-                                <Button x:Name="Category_Confirm_Button" Grid.Column="3" 
-                                        Background="{TemplateBinding Background}" BorderThickness="0"
-                                        Visibility="Collapsed" Margin="5, 0, 2, 0" Click="ConfirmEditCategory_Button_Click">
-                                    <Image Height="18" Source="Assets/Confirm.png"/>
-                                </Button>
+                                    <Button x:Name="Category_Confirm_Button"
+                                            Background="{TemplateBinding Background}" BorderThickness="0"
+                                            Visibility="Collapsed" Margin="5, 0, 2, 0" Click="ConfirmEditCategory_Button_Click">
+                                        <Image Height="18" Source="Assets/Confirm.png"/>
+                                    </Button>
 
-                                <Button x:Name="Category_Cancel_Button" Grid.Column="4"
-                                        Background="{TemplateBinding Background}" BorderThickness="0"
-                                        Visibility="Collapsed" Margin="0, 0, 5, 0" Click="CancelEditCategory_Button_Click">
-                                    <Image Height="18" Source="Assets/Cancel.png"/>
-                                </Button>
+                                    <Button x:Name="Category_Cancel_Button"
+                                            Background="{TemplateBinding Background}" BorderThickness="0"
+                                            Visibility="Collapsed" Margin="0, 0, 5, 0" Click="CancelEditCategory_Button_Click">
+                                        <Image Height="18" Source="Assets/Cancel.png"/>
+                                    </Button>
+                                </WrapPanel>
+
                             </Grid>
                         </Border>
 
@@ -278,11 +278,6 @@
                                 <TextBlock Text="Активность спец-предложений" TextAlignment="Center" TextWrapping="Wrap"/>
                             </DataGridTextColumn.Header>
                         </DataGridTextColumn>
-                        <!--<DataGridTextColumn Binding="{Binding category_name}" CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="100">
-                            <DataGridTextColumn.Header>
-                                <TextBlock Text="Категория" TextAlignment="Center" TextWrapping="Wrap"/>
-                            </DataGridTextColumn.Header>
-                        </DataGridTextColumn>-->
                         <DataGridTemplateColumn SortMemberPath="category_name" Width="100">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">

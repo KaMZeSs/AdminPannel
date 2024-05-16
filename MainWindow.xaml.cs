@@ -245,6 +245,29 @@ namespace AdminPannel
                 OnPropertyChanged("CurrentCategory");
             }
         }
+        private int _categories_listview_width;
+        public int Categories_ListView_Width
+        {
+            get { return _categories_listview_width; }
+            set
+            {
+                _categories_listview_width = value;
+                OnPropertyChanged("Categories_ListView_Width");
+                
+            }
+        }
+
+        private int _categories_listview_textbox_width;
+        public int Categories_ListView_TextBox_Width
+        {
+            get { return _categories_listview_textbox_width; }
+            set
+            {
+                _categories_listview_textbox_width = value;
+                OnPropertyChanged("Categories_ListView_TextBox_Width");
+            }
+        }
+
 
         private string _new_category;
         public string NewCategory
@@ -758,7 +781,11 @@ namespace AdminPannel
 
         #endregion
 
-
         #endregion
+
+        private void GridSplitter_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        {
+            this.Categories_ListView_TextBox_Width = _categories_listview_width - 100;
+        }
     }
 }
