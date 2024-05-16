@@ -280,75 +280,82 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="Изображение: " FontSize="16" Margin="5, 7"/>
+                <TextBlock Grid.Column="0" Text="Изображения: " FontSize="16" Margin="5, 7"/>
 
                 <Grid Grid.Column="1">
 
-                    <Canvas x:Name="displayImageCanvas" Width="180" Height="180">
-                        <Image x:Name="displayImage" Width="180" Height="180" Stretch="Uniform"/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                        <StackPanel x:Name="buttonPanel" Canvas.Left="40" Canvas.Top="37" Width="100" Orientation="Vertical" Background="Transparent">
-                            <Button x:Name="replaceImageButton" Content="Заменить" HorizontalAlignment="Stretch"  Height="30" Opacity="0.95" Margin="2"/>
-                            <Button x:Name="saveButton" Content="Сохранить" HorizontalAlignment="Stretch" Height="30" Opacity="0.95" Margin="2"/>
-                            <Button x:Name="deleteButton" Content="Удалить" HorizontalAlignment="Stretch" Height="30" Opacity="0.95" Margin="2"/>
-                        </StackPanel>
+                    <ListView ItemsSource="{Binding Images}"
+                              Margin="0,0,54,0" SelectionMode="Single">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Focusable" Value="false"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Canvas x:Name="displayImageCanvas" Width="180" Height="180">
+                                    <Image x:Name="displayImage" Source="{Binding BmImage}" Width="180" Height="180" Stretch="Uniform"/>
 
-                    </Canvas>
-
-                    <Button x:Name="addImageButton" Content="Добавить" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.95" FontSize="24" 
-                            Click="AddImageButton_Click">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Visibility" Value="Collapsed" />
+                                    <StackPanel x:Name="buttonPanel" Canvas.Left="30" Canvas.Top="37" Width="120" Orientation="Vertical" Background="Transparent">
+                                        <Button x:Name="openButton" Content="В полный экран" HorizontalAlignment="Stretch" 
+                                                Height="30" Opacity="0.95" Margin="2" Click="OpenButton_Click"/>
+                                        <Button x:Name="saveButton" Content="Сохранить на диск" HorizontalAlignment="Stretch" 
+                                                Height="30" Opacity="0.95" Margin="2" Click="SaveButton_Click"/>
+                                        <Button x:Name="deleteButton" Content="Удалить" HorizontalAlignment="Stretch" 
+                                                Height="30" Opacity="0.95" Margin="2" Click="DeleteButton_Click"/>
+                                    </StackPanel>
+                                    <Canvas.Resources>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=displayImageCanvas}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=displayImageCanvas}" Value="True">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Canvas.Resources>
+                                </Canvas>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                        <ListView.Style>
+                            <Style TargetType="ListView">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Source, ElementName=displayImage, Converter={x:Null}}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Visible" />
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding Images.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Button.Style>
+                        </ListView.Style>
+                    </ListView>
+
+
+                    <Button x:Name="addImageButton" Content="Добавить" 
+                            Width="200" Height="30" HorizontalContentAlignment="Center" 
+                            FontSize="24" 
+                            Click="AddImageButton_Click" Grid.Row="1">
+
                     </Button>
 
-                    <Grid.Resources>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=displayImageCanvas}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                        <Style TargetType="Image">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=displayImageCanvas}" Value="True">
-                                    <Setter Property="Opacity" Value="0.7"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Resources>
                 </Grid>
-
-                <Button Grid.Column="2" BorderThickness="0" Margin="5, 7, 2, 0" Height="21" VerticalAlignment="Top"
-                        Click="Image_Confirm_Button_Click" Visibility="{Binding ViewingVisibility}">
-                    <Button.IsEnabled>
-                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
-                            <Binding Path="ProductInfo.image"/>
-                            <Binding Path="OriginalObject.image"/>
-                        </MultiBinding>
-                    </Button.IsEnabled>
-                    <Image Source="Assets/Confirm.png"/>
-                </Button>
-
-                <Button Grid.Column="3" BorderThickness="0" Margin="0, 7, 5, 0" Height="21" VerticalAlignment="Top"
-                        Click="Image_Decline_Button_Click" Visibility="{Binding ViewingVisibility}">
-                    <Button.IsEnabled>
-                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
-                            <Binding Path="ProductInfo.image"/>
-                            <Binding Path="OriginalObject.image"/>
-                        </MultiBinding>
-                    </Button.IsEnabled>
-                    <Image Source="Assets/Cancel.png"/>
-                </Button>
             </Grid>
         </Grid>
     </Grid>

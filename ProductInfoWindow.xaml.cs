@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Dynamic;
 using System.IO;
@@ -15,8 +16,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-
 using Dapper;
+
+using MoreLinq.Extensions;
+
+using static System.Net.Mime.MediaTypeNames;
 
 namespace AdminPannel
 {
@@ -28,6 +32,8 @@ namespace AdminPannel
         public ProductInfoWindow(dynamic? product_info, bool isCreation)
         {
             InitializeComponent();
+
+            _images.CollectionChanged += ImageDataCollectionChanged;
 
             DataContext = this;
 
@@ -166,7 +172,7 @@ namespace AdminPannel
         {
             await this.UpdateCategories();
             await this.UpdateProductInfo();
-            await this.UpdateProductImage();
+            await this.UpdateProductImages();
         }
 
         private void TextBoxInt_PreviewTextChanged(object sender, TextChangedEventArgs e)
@@ -463,53 +469,99 @@ namespace AdminPannel
             this.ProductInfo.description = this.OriginalObject.description;
         }
 
-        private async void Image_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        //private async void Image_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        //{
+        //    //try
+        //    //{
+        //    //    await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+        //    //    {
+        //    //        string sql = "UPDATE products SET description = @new_description WHERE id = @id";
+
+        //    //        var data = new
+        //    //        {
+        //    //            new_description = _product_info.description,
+        //    //            id = _product_info.id
+        //    //        };
+
+        //    //        int rowsAffected = await conn.ExecuteAsync(sql, data);
+
+        //    //        _product_copy.description = _product_info.description;
+        //    //    }
+        //    //}
+        //    //catch (Exception)
+        //    //{
+        //    //    MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+        //    //        "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+        //    //    return;
+        //    //}
+        //}
+
+        //private void Image_Decline_Button_Click(object sender, RoutedEventArgs e)
+        //{
+        //    try
+        //    {
+        //        this.ProductInfo.image = this.OriginalObject.image;
+        //        this.ViewImage(_product_info.image);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        var vs = this.ProductInfo as IDictionary<String, Object>;
+
+        //        vs?.Remove("image");
+        //        displayImage.Source = null;
+        //    }
+
+
+        //}
+
+        //private ImageCollection _image_collection = new();
+        //public ImageCollection ImageCollection
+        //{
+        //    get
+        //    {
+        //        return _image_collection;
+        //    }
+        //}
+
+        private ObservableCollection<dynamic> _images = new();
+        public ObservableCollection<dynamic> Images
         {
-            //try
-            //{
-            //    await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
-            //    {
-            //        string sql = "UPDATE products SET description = @new_description WHERE id = @id";
-
-            //        var data = new
-            //        {
-            //            new_description = _product_info.description,
-            //            id = _product_info.id
-            //        };
-
-            //        int rowsAffected = await conn.ExecuteAsync(sql, data);
-
-            //        _product_copy.description = _product_info.description;
-            //    }
-            //}
-            //catch (Exception)
-            //{
-            //    MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
-            //        "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-
-            //    return;
-            //}
+            get => _images;
+            set
+            {
+                _images = value;
+                OnPropertyChanged(nameof(Images));
+            }
         }
 
-        private void Image_Decline_Button_Click(object sender, RoutedEventArgs e)
+        private void ImageDataCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            try
+            if (e.NewItems is null)
+                return;
+            e.NewItems.Cast<dynamic>().ForEach((dynamic item) =>
             {
-                this.ProductInfo.image = this.OriginalObject.image;
-                this.ViewImage(_product_info.image);
-            }
-            catch (Exception)
-            {
-                var vs = this.ProductInfo as IDictionary<String, Object>;
-
-                vs?.Remove("image");
-                displayImage.Source = null;
-            }
-
-
+                var data = item.image as byte[];
+                if (data is null)
+                    return;
+                item.BmImage = this.ByteArrayToBitmapImage(data);
+            });
         }
 
-        private async Task UpdateProductImage()
+        private BitmapImage ByteArrayToBitmapImage(byte[] imageData)
+        {
+            using (var stream = new MemoryStream(imageData))
+            {
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.StreamSource = stream;
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.EndInit();
+                return image;
+            }
+        }
+
+        private async Task UpdateProductImages()
         {
             try
             {
@@ -524,12 +576,11 @@ namespace AdminPannel
 
                     var vs = await conn.QueryAsExpandoAsync(sql, data);
 
-                    if (vs.Count() is 0)
-                        return;
-
-                    var imageData = (byte[])vs.First().image;
-
-                    this.ViewImage(imageData);
+                    _images.Clear();
+                    foreach (var item in vs)
+                    {
+                        _images.Add(item);
+                    }
                 }
             }
             catch (Exception)
@@ -541,58 +592,75 @@ namespace AdminPannel
             }
         }
 
-        private void ViewImage(byte[]? img)
+        private dynamic? _selected_image;
+        public dynamic? SelectedImage
         {
-            if (img != null)
+            get { return _selected_image; }
+            set
             {
-                using (var stream = new MemoryStream(img))
-                {
-                    var image = new BitmapImage();
-                    image.BeginInit();
-                    image.CacheOption = BitmapCacheOption.OnLoad;
-                    image.StreamSource = stream;
-                    image.EndInit();
-
-                    if (image != null)
-                    {
-                        displayImage.Source = image;
-                        this.ProductInfo.image = img;
-                    }
-                }
+                _selected_image = value;
+                OnPropertyChanged("SelectedImage");
             }
         }
 
+        private void OpenButton_Click(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Получаем ссылку на модель данных
+            var image = (sender as FrameworkElement)?.DataContext as dynamic;
+
+            if (image is null)
+                return;
+
+            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данное изображение?",
+                "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning) is not MessageBoxResult.OK)
+            {
+                return;
+            }
+        }
+
+
+
         private void AddImageButton_Click(object sender, RoutedEventArgs e)
         {
-            // Создаем диалоговое окно для выбора файла
-            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            //// Создаем диалоговое окно для выбора файла
+            //Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
 
-            // Устанавливаем фильтр для файлов изображений
-            openFileDialog.Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp";
+            //// Устанавливаем фильтр для файлов изображений
+            //openFileDialog.Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp";
 
-            // Показываем диалоговое окно
-            bool? result = openFileDialog.ShowDialog();
+            //// Показываем диалоговое окно
+            //bool? result = openFileDialog.ShowDialog();
 
-            // Если пользователь выбрал файл
-            if (result == true)
-            {
-                // Получаем путь к выбранному файлу
-                string filePath = openFileDialog.FileName;
+            //// Если пользователь выбрал файл
+            //if (result == true)
+            //{
+            //    // Получаем путь к выбранному файлу
+            //    string filePath = openFileDialog.FileName;
 
-                try
-                {
-                    // Считываем содержимое файла в массив байтов
-                    byte[] imageBytes = File.ReadAllBytes(filePath);
+            //    try
+            //    {
+            //        // Считываем содержимое файла в массив байтов
+            //        byte[] imageBytes = File.ReadAllBytes(filePath);
 
-                    this.ViewImage(imageBytes);
+            //        this.ViewImage(imageBytes);
 
-                }
-                catch (Exception ex)
-                {
-                    // Обработка исключений
-                    MessageBox.Show($"Ошибка при чтении файла изображения: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        // Обработка исключений
+            //        MessageBox.Show($"Ошибка при чтении файла изображения: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            //    }
+            //}
         }
     }
 }
