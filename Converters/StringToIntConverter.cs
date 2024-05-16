@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace AdminPannel
+namespace AdminPannel.Converters
 {
     public class StringToIntConverter : IValueConverter
     {

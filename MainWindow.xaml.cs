@@ -519,7 +519,7 @@ namespace AdminPannel
                 isWhere = true;
             }
 
-            if (ProductsShouldBeFiltered & ProductsFilter is not null)
+            if (ProductsShouldBeFiltered && ProductsFilter is not null)
             {
                 var expandoDict = (IDictionary<string, object>)ProductsFilter;
                 var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);

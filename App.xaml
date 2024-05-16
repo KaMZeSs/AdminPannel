@@ -2,16 +2,18 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:AdminPannel"
+             xmlns:converters="clr-namespace:AdminPannel.Converters"
              
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <local:BoolToActiveConverter x:Key="BoolToActiveConverter"/>
-            <local:StringToIntConverter x:Key="StringToIntConverter"/>
-            <local:TextToSerchableConverter x:Key="TextToSerchableConverter"/>
-            <local:ObjectChangedConverter x:Key="ObjectChangedConverter"/>
-            <local:MultiObjectConverter x:Key="MultiObjectConverter"/>
-            <local:TextBlockMaxWidthConverter x:Key="TextBlockMaxWidthConverter"/>
+            <converters:BoolToActiveConverter x:Key="BoolToActiveConverter"/>
+            <converters:StringToIntConverter x:Key="StringToIntConverter"/>
+            <converters:TextToSerchableConverter x:Key="TextToSerchableConverter"/>
+            <converters:ObjectChangedConverter x:Key="ObjectChangedConverter"/>
+            <converters:MultiObjectConverter x:Key="MultiObjectConverter"/>
+            <converters:TextBlockMaxWidthConverter x:Key="TextBlockMaxWidthConverter"/>
+            <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
 
             <!--Window-->
             <Style x:Key="Window_Style" TargetType="{x:Type Window}">

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 
-namespace AdminPannel
+namespace AdminPannel.Converters
 {
     internal class BoolToActiveConverter : IValueConverter
     {

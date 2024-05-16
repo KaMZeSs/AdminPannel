@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media.Imaging;
 
-namespace AdminPannel
+namespace AdminPannel.Converters
 {
     public class TextToSerchableConverter : IValueConverter
     {
@@ -13,10 +15,10 @@ namespace AdminPannel
             // В данном случае, мы просто возвращаем значение как есть.
             if (value is null)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
-            var str = new String(value.ToString().Skip(1).SkipLast(1).ToArray());
+            var str = new string(value.ToString()?.Skip(1).SkipLast(1).ToArray());
             return str;
         }
 
@@ -26,10 +28,10 @@ namespace AdminPannel
             // Здесь мы добавляем символы '%' к введенному тексту для использования в SQL-запросе.
             if (value != null)
             {
-                string text = value.ToString();
+                string? text = value.ToString();
                 return $"%{text}%";
             }
-            return null;
+            return string.Empty;
         }
     }
 
@@ -42,7 +44,7 @@ namespace AdminPannel
             var editedObject = value;
             var originalObject = parameter;
 
-            return !object.Equals(editedObject, originalObject);
+            return !Equals(editedObject, originalObject);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -61,7 +63,7 @@ namespace AdminPannel
                 object value2 = values[1];
 
                 // Проверяем, что оба значения не равны
-                return !object.Equals(value1, value2);
+                return !Equals(value1, value2);
             }
             return false;
         }
@@ -86,6 +88,31 @@ namespace AdminPannel
             }
             else
                 return actualWidth;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class ByteArrayToImageConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var imageData = value as byte[];
+            if (imageData == null)
+                return new();
+
+            using (var stream = new MemoryStream(imageData))
+            {
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.StreamSource = stream;
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.EndInit();
+                return image;
+            }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

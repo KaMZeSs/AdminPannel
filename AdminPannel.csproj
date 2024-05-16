@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <None Remove=".env" />
+    <None Remove="Assets\AddImage.png" />
     <None Remove="Assets\Cancel.png" />
     <None Remove="Assets\Confirm.png" />
     <None Remove="Assets\Edit.png" />
@@ -27,6 +28,7 @@
     <EmbeddedResource Include=".env">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <Resource Include="Assets\AddImage.png" />
     <Resource Include="Assets\Cancel.png" />
     <Resource Include="Assets\Confirm.png" />
     <Resource Include="Assets\Edit.png" />

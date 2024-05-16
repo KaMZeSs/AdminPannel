@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -33,7 +34,7 @@ namespace AdminPannel
         {
             InitializeComponent();
 
-            _images.CollectionChanged += ImageDataCollectionChanged;
+            //_images.CollectionChanged += ImageDataCollectionChanged;
 
             DataContext = this;
 
@@ -50,8 +51,8 @@ namespace AdminPannel
             _is_creation = isCreation;
         }
 
-        dynamic _product_copy;
-        public dynamic OriginalObject
+        dynamic? _product_copy;
+        public dynamic? OriginalObject
         {
             get { return _product_copy; } 
             set
@@ -61,8 +62,8 @@ namespace AdminPannel
             }
         }
 
-        dynamic _product_info;
-        public dynamic ProductInfo
+        dynamic? _product_info;
+        public dynamic? ProductInfo
         {
             get { return _product_info; }
             set
@@ -94,7 +95,6 @@ namespace AdminPannel
             set
             {
                 _current_category = value;
-                this.ProductInfo.category_id = CurrentCategory.id;
                 OnPropertyChanged("CurrentCategory");
             }
         }
@@ -158,17 +158,19 @@ namespace AdminPannel
             {
                 return;
             }
-
-            
         }
 
         private async void Refresh_Button_Click(object sender, RoutedEventArgs e)
         {
-            await this.UpdateCategories();
-            await this.UpdateProductInfo();
+            await RefreshData();
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            await RefreshData();
+        }
+
+        private async Task RefreshData()
         {
             await this.UpdateCategories();
             await this.UpdateProductInfo();
@@ -203,7 +205,7 @@ namespace AdminPannel
             var current_id = -1;
             if (ProductInfo is not null)
             {
-                current_id = _product_copy.category_id;
+                current_id = _product_copy?.category_id ?? -1;
             }
 
             await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -235,6 +237,10 @@ namespace AdminPannel
 
         private async Task UpdateProductInfo()
         {
+            if (_product_info is null)
+                return;
+            if (_product_copy is null)
+                return;
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -275,11 +281,14 @@ namespace AdminPannel
 
                     var product = (await conn.QueryAsExpandoAsync(sql, data)).First();
 
+                    if (product is null)
+                        return;
+
                     var vs1 = (ExpandoObject)this._product_info;
                     var vs2 = (ExpandoObject)this._product_copy;
 
-                    vs1.UpdateFrom(product as ExpandoObject);
-                    vs2.UpdateFrom(product as ExpandoObject);
+                    vs1.UpdateFrom((ExpandoObject)product);
+                    vs2.UpdateFrom((ExpandoObject)product);
                 }
             }
             catch (Exception)
@@ -291,8 +300,15 @@ namespace AdminPannel
             }
         }
 
+        #region Product Info Changers
+
         private async void Name_Confirm_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (_product_info is null)
+                return;
+            if (_product_copy is null)
+                return;
+
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -321,11 +337,22 @@ namespace AdminPannel
 
         private void Name_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (ProductInfo is null)
+                return;
+            if (OriginalObject is null)
+                return;
+
+
             this.ProductInfo.name = this.OriginalObject.name;
         }
 
         private async void Price_Confirm_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (_product_info is null)
+                return;
+            if (_product_copy is null)
+                return;
+
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -356,11 +383,21 @@ namespace AdminPannel
 
         private void Price_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (ProductInfo is null)
+                return;
+            if (OriginalObject is null)
+                return;
+
             this.ProductInfo.price = this.OriginalObject.price;
         }
 
         private async void AvailableQuantity_Confirm_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (_product_info is null)
+                return;
+            if (_product_copy is null)
+                return;
+
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -391,11 +428,21 @@ namespace AdminPannel
 
         private void AvailableQuantity_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (ProductInfo is null)
+                return;
+            if (OriginalObject is null)
+                return;
+
             this.ProductInfo.available_quantity = this.OriginalObject.available_quantity;
         }
 
         private async void Category_Confirm_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (_product_info is null)
+                return;
+            if (_product_copy is null)
+                return;
+
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -424,6 +471,14 @@ namespace AdminPannel
 
         private void Category_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (_product_copy is null)
+                return;
+
+            if (ProductInfo is null)
+                return;
+            if (OriginalObject is null)
+                return;
+
             this.ProductInfo.category_id = this.OriginalObject.category_id;
             
             var current_id = -1;
@@ -438,6 +493,11 @@ namespace AdminPannel
 
         private async void Description_Confirm_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (_product_info is null)
+                return;
+            if (_product_copy is null)
+                return;
+
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -466,63 +526,17 @@ namespace AdminPannel
 
         private void Description_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
+            if (ProductInfo is null)
+                return;
+            if (OriginalObject is null)
+                return;
+
             this.ProductInfo.description = this.OriginalObject.description;
         }
 
-        //private async void Image_Confirm_Button_Click(object sender, RoutedEventArgs e)
-        //{
-        //    //try
-        //    //{
-        //    //    await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
-        //    //    {
-        //    //        string sql = "UPDATE products SET description = @new_description WHERE id = @id";
+        #endregion
 
-        //    //        var data = new
-        //    //        {
-        //    //            new_description = _product_info.description,
-        //    //            id = _product_info.id
-        //    //        };
-
-        //    //        int rowsAffected = await conn.ExecuteAsync(sql, data);
-
-        //    //        _product_copy.description = _product_info.description;
-        //    //    }
-        //    //}
-        //    //catch (Exception)
-        //    //{
-        //    //    MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
-        //    //        "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-
-        //    //    return;
-        //    //}
-        //}
-
-        //private void Image_Decline_Button_Click(object sender, RoutedEventArgs e)
-        //{
-        //    try
-        //    {
-        //        this.ProductInfo.image = this.OriginalObject.image;
-        //        this.ViewImage(_product_info.image);
-        //    }
-        //    catch (Exception)
-        //    {
-        //        var vs = this.ProductInfo as IDictionary<String, Object>;
-
-        //        vs?.Remove("image");
-        //        displayImage.Source = null;
-        //    }
-
-
-        //}
-
-        //private ImageCollection _image_collection = new();
-        //public ImageCollection ImageCollection
-        //{
-        //    get
-        //    {
-        //        return _image_collection;
-        //    }
-        //}
+        #region Image Changers
 
         private ObservableCollection<dynamic> _images = new();
         public ObservableCollection<dynamic> Images
@@ -535,34 +549,11 @@ namespace AdminPannel
             }
         }
 
-        private void ImageDataCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (e.NewItems is null)
-                return;
-            e.NewItems.Cast<dynamic>().ForEach((dynamic item) =>
-            {
-                var data = item.image as byte[];
-                if (data is null)
-                    return;
-                item.BmImage = this.ByteArrayToBitmapImage(data);
-            });
-        }
-
-        private BitmapImage ByteArrayToBitmapImage(byte[] imageData)
-        {
-            using (var stream = new MemoryStream(imageData))
-            {
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.StreamSource = stream;
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.EndInit();
-                return image;
-            }
-        }
-
         private async Task UpdateProductImages()
         {
+            if (_product_info is null)
+                return;
+
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -576,10 +567,10 @@ namespace AdminPannel
 
                     var vs = await conn.QueryAsExpandoAsync(sql, data);
 
-                    _images.Clear();
+                    Images.Clear();
                     foreach (var item in vs)
                     {
-                        _images.Add(item);
+                        Images.Add(item);
                     }
                 }
             }
@@ -605,62 +596,88 @@ namespace AdminPannel
 
         private void OpenButton_Click(object sender, RoutedEventArgs e)
         {
-            
+            throw new NotImplementedException();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            
+            throw new NotImplementedException();
         }
 
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
+            throw new NotImplementedException();
             // Получаем ссылку на модель данных
-            var image = (sender as FrameworkElement)?.DataContext as dynamic;
+            //var image = (sender as FrameworkElement)?.DataContext as dynamic;
 
-            if (image is null)
+            //if (image is null)
+            //    return;
+
+            //if (MessageBox.Show($"Вы точно уверены, что хотите удалить данное изображение?",
+            //    "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning) is not MessageBoxResult.OK)
+            //{
+            //    return;
+            //}
+        }
+
+        private async void AddImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_product_info is null)
                 return;
 
-            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данное изображение?",
-                "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning) is not MessageBoxResult.OK)
+            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            openFileDialog.Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp";
+            bool? result = openFileDialog.ShowDialog();
+
+            if (result is not true)
+                return;
+
+            // Получаем путь к выбранному файлу
+            string filePath = openFileDialog.FileName;
+
+            byte[] imageBytes;
+
+            try
             {
+                imageBytes = File.ReadAllBytes(filePath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при чтении файла изображения: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "INSERT INTO product_images (product_id, image) VALUES (@product_id, @image) RETURNING id";
+
+                    var data = new
+                    {
+                        product_id = _product_info.id,
+                        image = imageBytes
+                    };
+
+                    int image_id = await conn.QueryFirstAsync<int>(sql, data);
+
+                    dynamic expando = new ExpandoObject();
+                    expando.id = image_id;
+                    expando.product_id = _product_info.id;
+                    expando.image = imageBytes;
+
+                    Images.Add(expando);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
                 return;
             }
         }
 
-
-
-        private void AddImageButton_Click(object sender, RoutedEventArgs e)
-        {
-            //// Создаем диалоговое окно для выбора файла
-            //Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
-
-            //// Устанавливаем фильтр для файлов изображений
-            //openFileDialog.Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp";
-
-            //// Показываем диалоговое окно
-            //bool? result = openFileDialog.ShowDialog();
-
-            //// Если пользователь выбрал файл
-            //if (result == true)
-            //{
-            //    // Получаем путь к выбранному файлу
-            //    string filePath = openFileDialog.FileName;
-
-            //    try
-            //    {
-            //        // Считываем содержимое файла в массив байтов
-            //        byte[] imageBytes = File.ReadAllBytes(filePath);
-
-            //        this.ViewImage(imageBytes);
-
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        // Обработка исключений
-            //        MessageBox.Show($"Ошибка при чтении файла изображения: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            //    }
-            //}
-        }
+        #endregion
     }
 }

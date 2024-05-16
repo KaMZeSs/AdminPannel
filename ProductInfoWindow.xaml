@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AdminPannel"
         mc:Ignorable="d"
-        Title="ProductInfoWindow" Height="650" Width="420"
+        Title="ProductInfoWindow" Height="720" Width="650"
         Closing="Window_Closing"
         Loaded="Window_Loaded">
     <Grid Width="Auto">
@@ -277,10 +277,19 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+                
+                <Grid Grid.Column="0" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Text="Изображения: " FontSize="16" Margin="5, 7"/>
 
-                <TextBlock Grid.Column="0" Text="Изображения: " FontSize="16" Margin="5, 7"/>
+                </Grid>
+                
 
                 <Grid Grid.Column="1">
 
@@ -290,7 +299,12 @@
                     </Grid.RowDefinitions>
 
                     <ListView ItemsSource="{Binding Images}"
-                              Margin="0,0,54,0" SelectionMode="Single">
+                              Margin="0,7,0,7" SelectionMode="Single">
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Focusable" Value="false"/>
@@ -300,8 +314,8 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Canvas x:Name="displayImageCanvas" Width="180" Height="180">
-                                    <Image x:Name="displayImage" Source="{Binding BmImage}" Width="180" Height="180" Stretch="Uniform"/>
+                                <Canvas x:Name="displayImageCanvas" Width="200" Height="200">
+                                    <Image x:Name="displayImage" Source="{Binding image, Converter={StaticResource ByteArrayToImageConverter}}" Width="200" Height="200" Stretch="Uniform"/>
 
                                     <StackPanel x:Name="buttonPanel" Canvas.Left="30" Canvas.Top="37" Width="120" Orientation="Vertical" Background="Transparent">
                                         <Button x:Name="openButton" Content="В полный экран" HorizontalAlignment="Stretch" 
@@ -346,16 +360,23 @@
                             </Style>
                         </ListView.Style>
                     </ListView>
-
-
-                    <Button x:Name="addImageButton" Content="Добавить" 
-                            Width="200" Height="30" HorizontalContentAlignment="Center" 
-                            FontSize="24" 
-                            Click="AddImageButton_Click" Grid.Row="1">
-
-                    </Button>
-
                 </Grid>
+
+                <Button x:Name="addImageButton" Grid.Column="2"
+                        Height="44" Width="44" VerticalAlignment="Top"
+                        FontSize="24" Margin="5, 7" 
+                        Click="AddImageButton_Click" BorderThickness="0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Images.Count}" Value="3">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Image Source="Assets/AddImage.png" Margin="5"/>
+                </Button>
             </Grid>
         </Grid>
     </Grid>
