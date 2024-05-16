@@ -218,7 +218,7 @@
                 </Grid.RowDefinitions>
 
                 <DataGrid x:Name="Products_DataGrid" ItemsSource="{Binding Products}" 
-                          FontSize="16" AutoGenerateColumns="False"
+                          FontSize="16" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                           VirtualizingPanel.IsVirtualizing="True"
                           VirtualizingPanel.VirtualizationMode="Recycling"
                           EnableColumnVirtualization="False"

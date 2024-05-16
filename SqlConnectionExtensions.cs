@@ -34,7 +34,7 @@ namespace AdminPannel
             return list;
         }
 
-        public static async Task<IEnumerable<dynamic>> QueryFirstAsExpandoAsync(
+        public static async Task<dynamic> QueryFirstAsExpandoAsync(
             this IDbConnection connection, string sql, object? param = null)
         {
             var result = await connection.QueryFirstAsync<dynamic>(sql: sql, param: param);

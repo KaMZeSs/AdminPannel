@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -165,6 +166,7 @@ namespace AdminPannel
         {
             await this.UpdateCategories();
             await this.UpdateProductInfo();
+            await this.UpdateProductImage();
         }
 
         private void TextBoxInt_PreviewTextChanged(object sender, TextChangedEventArgs e)
@@ -461,5 +463,136 @@ namespace AdminPannel
             this.ProductInfo.description = this.OriginalObject.description;
         }
 
+        private async void Image_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            //try
+            //{
+            //    await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+            //    {
+            //        string sql = "UPDATE products SET description = @new_description WHERE id = @id";
+
+            //        var data = new
+            //        {
+            //            new_description = _product_info.description,
+            //            id = _product_info.id
+            //        };
+
+            //        int rowsAffected = await conn.ExecuteAsync(sql, data);
+
+            //        _product_copy.description = _product_info.description;
+            //    }
+            //}
+            //catch (Exception)
+            //{
+            //    MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+            //        "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+            //    return;
+            //}
+        }
+
+        private void Image_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                this.ProductInfo.image = this.OriginalObject.image;
+                this.ViewImage(_product_info.image);
+            }
+            catch (Exception)
+            {
+                var vs = this.ProductInfo as IDictionary<String, Object>;
+
+                vs?.Remove("image");
+                displayImage.Source = null;
+            }
+
+
+        }
+
+        private async Task UpdateProductImage()
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "SELECT * FROM product_images WHERE product_id = @id";
+
+                    var data = new
+                    {
+                        id = _product_info.id
+                    };
+
+                    var vs = await conn.QueryAsExpandoAsync(sql, data);
+
+                    if (vs.Count() is 0)
+                        return;
+
+                    var imageData = (byte[])vs.First().image;
+
+                    this.ViewImage(imageData);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при получении изображения. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+
+        private void ViewImage(byte[]? img)
+        {
+            if (img != null)
+            {
+                using (var stream = new MemoryStream(img))
+                {
+                    var image = new BitmapImage();
+                    image.BeginInit();
+                    image.CacheOption = BitmapCacheOption.OnLoad;
+                    image.StreamSource = stream;
+                    image.EndInit();
+
+                    if (image != null)
+                    {
+                        displayImage.Source = image;
+                        this.ProductInfo.image = img;
+                    }
+                }
+            }
+        }
+
+        private void AddImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Создаем диалоговое окно для выбора файла
+            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
+
+            // Устанавливаем фильтр для файлов изображений
+            openFileDialog.Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp";
+
+            // Показываем диалоговое окно
+            bool? result = openFileDialog.ShowDialog();
+
+            // Если пользователь выбрал файл
+            if (result == true)
+            {
+                // Получаем путь к выбранному файлу
+                string filePath = openFileDialog.FileName;
+
+                try
+                {
+                    // Считываем содержимое файла в массив байтов
+                    byte[] imageBytes = File.ReadAllBytes(filePath);
+
+                    this.ViewImage(imageBytes);
+
+                }
+                catch (Exception ex)
+                {
+                    // Обработка исключений
+                    MessageBox.Show($"Ошибка при чтении файла изображения: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
     }
 }
