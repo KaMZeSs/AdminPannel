@@ -82,10 +82,9 @@ namespace AdminPannel
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var vs = onGridChange.First().Key;
-            this.ChangeGrid(vs);
-
-            
+            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Список товаров")).First();
+            menu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
         }
 
         #endregion
@@ -118,7 +117,6 @@ namespace AdminPannel
 
         private Grid? GridByName(string name)
         {
-
             switch (name)
             {
                 case "Заказы":
@@ -157,6 +155,21 @@ namespace AdminPannel
 
             ChangeGrid(grid);
         }
+
+        private void MenuItem_Checked(object sender, RoutedEventArgs e)
+        {
+            MoreEnumerable.ForEach(Grid_Menu.Items.Cast<MenuItem>().Where(x => x != sender), (x) =>
+            {
+                x.IsChecked = false;
+            });
+            ((MenuItem)sender).IsChecked = true;
+        }
+
+        private void MenuItem_Unchecked(object sender, RoutedEventArgs e)
+        {
+            e.Handled = true;
+        }
+
 
         private async void Refresh_Button_Click(object sender, RoutedEventArgs e)
         {
@@ -479,6 +492,9 @@ namespace AdminPannel
                 OnPropertyChanged("Products");
             }
         }
+
+        private bool is_products_filtered = false;
+
         private (String sql, object? data) CreateProductSQL(bool ProductsShouldBeFiltered = false)
         {
             var selected_category_id = CurrentCategory?.id ?? -1;
@@ -685,12 +701,14 @@ namespace AdminPannel
                 var products = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
 
                 Products = new ObservableCollection<object>(products);
+                
+                is_products_filtered = ProductsShouldBeFiltered;
             }
         }
 
         private async void DeleteSelectedProducts_Button_Click(object sender, RoutedEventArgs e)
         {
-            var selected_products = Products_DataGrid.SelectedItems.Cast<dynamic>();
+            var selected_products = Products_DataGrid.SelectedItems.Cast<dynamic>().ToArray();
 
             if (selected_products is null)
                 return;
@@ -700,11 +718,11 @@ namespace AdminPannel
 
             var count = selected_products.Count();
 
-            var to_view = String.Join('\n', selected_products.Take(10).Select(x => $"[{x.id}] {x.name}"));
+            var to_view = String.Join('\n', selected_products.Take(6).Select(x => $"[{x.id}] {x.name}"));
             if (count > 10)
                 to_view += "\n...";
 
-            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данны{(count is 1 ? "й" : "е")} товар{(count is 1 ? "" : "ы")}?\n\n{to_view}",
+            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данны{(count is 1 ? "й" : "е")} товар{(count is 1 ? "" : "ы")}? Вего удалить: {count}\n\n{to_view}",
                                 "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning) is not MessageBoxResult.OK)
             {
                 return;
@@ -729,7 +747,7 @@ namespace AdminPannel
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
                 {
@@ -768,7 +786,36 @@ namespace AdminPannel
 
         private void CreateNewProduct_Button_Click(object sender, RoutedEventArgs e)
         {
+            var window = new ProductInfoWindow(null, true);
+            var is_created = window.ShowDialog() ?? false;
 
+            var new_product = window.ProductInfo;
+
+            if (!is_created || new_product is null)
+                return;
+
+            if (CurrentCategory is null)
+                return;
+
+            if ((CurrentCategory.id is -1 | CurrentCategory.id == new_product.category_id) && !is_products_filtered)
+            {
+                if (new_product.category_id is not -1)
+                {
+                    var found = Categories.First(x => ((dynamic)x).id == new_product.category_id);
+                    if (found != null)
+                    {
+                        new_product.category_name = (found as dynamic).name;
+                    }
+                }
+                Products.Add(new_product);
+            }
+
+            var window_view = new ProductInfoWindow(new_product, false)
+            {
+                Top = window.Top,
+                Left = window.Left
+            };
+            window_view.ShowDialog();
         }
 
         private async void ProductsFilter_Button_Click(object sender, RoutedEventArgs e)

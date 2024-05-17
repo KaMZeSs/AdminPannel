@@ -26,7 +26,6 @@
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="Foreground" Value="Black"/>
-                <Setter Property="Background" Value="White"/>
             </Style>
 
             <Style x:Key="MenuItem_Style" TargetType="MenuItem">
@@ -35,6 +34,11 @@
                 <Setter Property="Background" Value="White"/>
                 <Setter Property="FontSize" Value="15"/>
                 <Setter Property="FontSize" Value="15"/>
+                <Style.Triggers>
+                    <Trigger Property="IsChecked" Value="True">
+                        <Setter Property="Background" Value="WhiteSmoke"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
 
             <!--DataGrid-->

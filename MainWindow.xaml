@@ -5,14 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AdminPannel"
         mc:Ignorable="d"
-        
-        
 
         Style="{StaticResource Window_Style}"
         
         Loaded="Window_Loaded"
         
-        Title="MainWindow" Height="720" Width="1470">
+        Title="Панель администратора" Height="720" Width="1470">
 
     <Window.Resources>
 
@@ -127,14 +125,13 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            
-            <Menu>
-                <!--<MenuItem Header="Пользователи" Style="{StaticResource MenuItem_Style}" Click="MenuItem_Click"/>-->
-                <MenuItem Header="Заказы" Style="{StaticResource MenuItem_Style}" Click="MenuItem_Click"/>
-                <MenuItem Header="Список товаров" Style="{StaticResource MenuItem_Style}" Click="MenuItem_Click"/>
-                <!--<MenuItem Header="Акции" Style="{StaticResource MenuItem_Style}" Click="MenuItem_Click"/>-->
-                <MenuItem Header="Пункты выдачи" Style="{StaticResource MenuItem_Style}" Click="MenuItem_Click"/>
-                <MenuItem Header="Новости" Style="{StaticResource MenuItem_Style}" Click="MenuItem_Click"/>
+
+            <Menu x:Name="Grid_Menu">
+                <MenuItem Header="Заказы" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
+                <MenuItem Header="Список товаров" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
+                <MenuItem Header="Акции" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
+                <MenuItem Header="Пункты выдачи" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
+                <MenuItem Header="Новости" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
             </Menu>
 
             <Button x:Name="Refresh_Button" Grid.Column="2"

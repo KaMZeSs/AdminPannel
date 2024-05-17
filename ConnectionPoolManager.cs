@@ -31,7 +31,16 @@ namespace AdminPannel
         public async Task<NpgsqlConnection> GetConnectionAsync()
         {
             var connection = new NpgsqlConnection(connectionString);
-            await connection.OpenAsync();
+            try
+            {
+                await connection.OpenAsync();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
             return connection;
         }
     }
