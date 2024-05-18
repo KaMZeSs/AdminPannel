@@ -16,7 +16,7 @@ namespace AdminPannel
             var expandoDict = (IDictionary<string, object>)expando;
             foreach (var property in original)
             {
-                expandoDict[property.Key] = property.Value;
+                expandoDict[property.Key] = property.Value ?? new();
             }
 
             return expando;
@@ -24,10 +24,10 @@ namespace AdminPannel
 
         public static void UpdateFrom(this ExpandoObject original, ExpandoObject data)
         {
-            var expandoDict = (IDictionary<string, object>)original;
+            var expandoDict = original as IDictionary<string, object>;
             foreach (var property in data)
             {
-                expandoDict[property.Key] = property.Value;
+                expandoDict[property.Key] = property.Value ?? new();
             }
         }
     }

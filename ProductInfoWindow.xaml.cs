@@ -144,7 +144,7 @@ namespace AdminPannel
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private bool IsChanged = false;
+        //private bool IsChanged = false;
 
         private async void Refresh_Button_Click(object sender, RoutedEventArgs e)
         {

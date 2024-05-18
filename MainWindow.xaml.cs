@@ -5,6 +5,7 @@ using System.DirectoryServices;
 using System.Dynamic;
 using System.IO;
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -41,11 +42,11 @@ namespace AdminPannel
 
             onGridChange = new Dictionary<Grid, Func<Task>>()
             {
-                { this.Products_Grid, this.OnProductSelected }
+                { this.Products_Grid, this.OnProductSelected },
+                { this.Orders_Grid, this.OnOrdersSelected }
             };
 
             _new_category = String.Empty;
-            ProductsFilter = new ExpandoObject();
         }
 
         #region Service Things
@@ -78,11 +79,11 @@ namespace AdminPannel
                 tbox.Text = vs;
             }
             tbox.SelectionStart = ss;
-        }
+        }        
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Список товаров")).First();
+            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Заказы")).First();
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
         }
@@ -92,26 +93,6 @@ namespace AdminPannel
         #region Menu_Grid
 
         Grid? currentGrid;
-        Grid? CurrentGrid
-        {
-            get
-            {
-                return currentGrid;
-            }
-
-            set
-            {
-                currentGrid = value;
-                if (value is not null)
-                {
-                    try
-                    {
-                        this.onGridChange[value].Invoke();
-                    }
-                    catch { }
-                }
-            }
-        }
 
         Dictionary<Grid, Func<Task>> onGridChange;
 
@@ -141,9 +122,18 @@ namespace AdminPannel
 
             if (currentGrid is not null)
                 currentGrid.Visibility = Visibility.Collapsed;
-            CurrentGrid = grid;
-            CurrentGrid.Visibility = Visibility.Visible;
+            currentGrid = grid;
+            currentGrid.Visibility = Visibility.Visible;
+
+            try
+            {
+                this.onGridChange[currentGrid].Invoke();
+            }
+            catch { }
         }
+
+        // Флаг для предотвращения бесконечной рекурсии в меню
+        private bool _isHandlingClick;
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -158,23 +148,33 @@ namespace AdminPannel
 
         private void MenuItem_Checked(object sender, RoutedEventArgs e)
         {
-            MoreEnumerable.ForEach(Grid_Menu.Items.Cast<MenuItem>().Where(x => x != sender), (x) =>
+            if (sender is not MenuItem item)
+                return;
+            _isHandlingClick = true;
+            MoreEnumerable.ForEach(Grid_Menu.Items.Cast<MenuItem>().Where(x => x != item), (x) =>
             {
                 x.IsChecked = false;
             });
-            ((MenuItem)sender).IsChecked = true;
+            item.IsChecked = true;
+            _isHandlingClick = false;
         }
 
         private void MenuItem_Unchecked(object sender, RoutedEventArgs e)
         {
-            e.Handled = true;
+            if (_isHandlingClick)
+                return;
+            if (sender is not MenuItem item)
+                return;
+
+            _isHandlingClick = true;
+            item.IsChecked = true;
+            _isHandlingClick = false;
         }
 
-
-        private async void Refresh_Button_Click(object sender, RoutedEventArgs e)
+        private void Refresh_Button_Click(object sender, RoutedEventArgs e)
         {
             if (currentGrid is not null)
-                await this.onGridChange[currentGrid].Invoke();
+                this.onGridChange[currentGrid].Invoke();
         }
 
 
@@ -199,9 +199,6 @@ namespace AdminPannel
         private async Task OnProductSelected()
         {
             await UpdateCategories();
-
-            if (ProductsFilter is null)
-                return;
         }
 
         private async Task UpdateCategories()
@@ -280,7 +277,6 @@ namespace AdminPannel
                 OnPropertyChanged("Categories_ListView_TextBox_Width");
             }
         }
-
 
         private string _new_category;
         public string NewCategory
@@ -471,7 +467,7 @@ namespace AdminPannel
 
         #region Products
 
-        private dynamic? _products_filter;
+        private dynamic? _products_filter = new ExpandoObject();
         public dynamic? ProductsFilter
         {
             get { return _products_filter; }
@@ -561,12 +557,12 @@ namespace AdminPannel
                         {
                             if (!isWhere)
                             {
-                                sql += "\nWHERE p.name LIKE @name";
+                                sql += "\nWHERE lower(p.name) LIKE lower(@name)";
                                 isWhere = true;
                             }
                             else
                             {
-                                sql += " AND p.name LIKE @name";
+                                sql += " AND lower(p.name) LIKE lower(@name)";
                             }
                             break;
                         }
@@ -747,7 +743,7 @@ namespace AdminPannel
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
                 {
@@ -830,9 +826,169 @@ namespace AdminPannel
 
         #endregion
 
-        private void GridSplitter_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        #region Orders
+
+        enum OrdersType
         {
-            this.Categories_ListView_TextBox_Width = _categories_listview_width - 100;
+            New,
+            Current,
+            Completed
         }
+
+        private OrdersType current_orders_type;
+
+        private async void Orders_MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem item)
+                return;
+
+            current_orders_type = item.Header switch
+            {
+                "Новые" => OrdersType.New,
+                "Текущие" => OrdersType.Current,
+                "Завершённые" => OrdersType.Completed,
+                _ => OrdersType.New
+            };
+
+            await UpdateOrders();
+        }
+        private void Orders_MenuItem_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem item)
+                return;
+            _isHandlingClick = true;
+            MoreEnumerable.ForEach(Orders_Menu.Items.Cast<MenuItem>().Where(x => x != item), (x) =>
+            {
+                x.IsChecked = false;
+            });
+            item.IsChecked = true;
+            _isHandlingClick = false;
+        }
+        private void Orders_MenuItem_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_isHandlingClick)
+                return;
+            if (sender is not MenuItem item)
+                return;
+
+            _isHandlingClick = true;
+            item.IsChecked = true;
+            _isHandlingClick = false;
+        }
+
+        private async Task OnOrdersSelected()
+        {
+            var menu = Orders_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Новые")).First();
+            menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
+            current_orders_type = OrdersType.New;
+            await UpdateOrders();
+        }
+
+        public ObservableCollection<object> _orders = new();
+        public ObservableCollection<object> Orders
+        {
+            get { return _orders; }
+            set
+            {
+                _orders.Clear();
+                _orders = value;
+                OnPropertyChanged(nameof(Orders));
+            }
+        }
+
+        private async Task UpdateOrders(bool OrdersShouldBeFiltered = false)
+        {
+            var vs = Orders_Order_DateTime_From_Filter_TextBox.Text;
+            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+            {
+                var cmd = this.CreateOrdersSQL(OrdersShouldBeFiltered);
+
+                var orders = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
+
+                Orders = new ObservableCollection<object>(orders);
+            }
+        }
+
+        private (String sql, object? data) CreateOrdersSQL(bool OrdersShouldBeFiltered = false)
+        {
+            var filter_string = String.Empty;
+
+            if (OrdersShouldBeFiltered && OrdersFilter is not null)
+            {
+                var expandoDict = (IDictionary<string, object>)OrdersFilter;
+                var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);
+
+                foreach (var kvp in filter)
+                {
+                    filter_string += kvp.Key switch
+                    {
+                        "order_id" => " AND o.id = @order_id",
+                        "telegram_id" => " AND us.telegram_id = @telegram_id",
+                        "order_timestamp_from" => " AND o.order_timestamp >= @order_timestamp_from",
+                        "order_timestamp_to" => " AND o.order_timestamp <= @order_timestamp_to",
+                        "pickup_point_address" => " AND lower(pp.address) LIKE lower(@pickup_point_address)",
+                        "status" => " AND o.status = @status",
+                        _ => ""
+                    };
+                }
+            }
+
+            var sql_status = current_orders_type switch
+            {
+                OrdersType.New => "= 'created'",
+                OrdersType.Current => "NOT IN ('completed', 'canceled')",
+                OrdersType.Completed => "IN ('completed', 'canceled')",
+                _ => "= 'created'",
+            };
+
+            var sql =
+                        @$"SELECT
+                            o.id AS order_id,
+                            us.telegram_id,
+                            o.pickup_point_id,
+                            pp.address AS pickup_point_address,
+                            o.status,
+                            o.order_timestamp,
+                            o_sum.total_price,
+                            o_sum.total_count
+                        FROM orders o
+                        JOIN pickup_points pp ON o.pickup_point_id = pp.id
+                        JOIN users us ON o.user_id = us.id
+                        JOIN (
+                            SELECT 
+                                order_id,
+                                count(*) as total_count,
+                                sum(price*quantity) as total_price
+                            FROM order_items
+                            GROUP BY order_id
+                        ) o_sum ON o.id = o_sum.order_id
+                        WHERE o.status {sql_status} {filter_string}
+                        ORDER BY o.order_timestamp DESC";
+
+            return (sql, _orders_filter);
+        }
+        private async void OrdersFilter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateOrders(OrdersShouldBeFiltered: true);
+        }
+        private void ViewSelectedOrder_Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private dynamic? _orders_filter = new ExpandoObject();
+        public dynamic? OrdersFilter
+        {
+            get { return _orders_filter; }
+            set
+            {
+                _orders_filter = value;
+                OnPropertyChanged(nameof(OrdersFilter));
+            }
+        }
+
+
+
+        #endregion
     }
 }

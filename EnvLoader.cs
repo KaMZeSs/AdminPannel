@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Reflection;
+using System.Windows.Markup;
 
 namespace AdminPannel
 {
@@ -34,6 +35,17 @@ namespace AdminPannel
                 }
             }
             
+        }
+    }
+
+    public class KVPair
+    {
+        public string Key { get; set; } = String.Empty;
+        public string Value { get; set; } = String.Empty;
+
+        public KeyValuePair<String, String> ToKeyValuePair()
+        {
+            return KeyValuePair.Create(Key, Value);
         }
     }
 }

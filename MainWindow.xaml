@@ -3,17 +3,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:AdminPannel"
+        xmlns:local="clr-namespace:AdminPannel" xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
 
         Style="{StaticResource Window_Style}"
         
         Loaded="Window_Loaded"
-        
         Title="Панель администратора" Height="720" Width="1470">
-
     <Window.Resources>
-
         <Style x:Key="Categories_ListViewItemStyle" TargetType="ListViewItem">
             <Setter Property="Template">
                 <Setter.Value>
@@ -139,14 +137,300 @@
                 <Image Height="24" Source="Assets/Refresh.png"/>
             </Button>
         </Grid>
-        
-        
 
-        <Grid Name="Orders_Grid" Grid.Row="1" Visibility="Collapsed">
-            
+        <Grid Name="Orders_Grid" Grid.Row="1" Visibility="Visible">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <Menu x:Name="Orders_Menu" Grid.Row="0">
+                <MenuItem Header="Новые" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="Orders_MenuItem_Checked" Unchecked="Orders_MenuItem_Unchecked" Click="Orders_MenuItem_Click"/>
+                <MenuItem Header="Текущие" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="Orders_MenuItem_Checked" Unchecked="Orders_MenuItem_Unchecked" Click="Orders_MenuItem_Click"/>
+                <MenuItem Header="Завершённые" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="Orders_MenuItem_Checked" Unchecked="Orders_MenuItem_Unchecked" Click="Orders_MenuItem_Click"/>
+            </Menu>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid x:Name="Orders_DataGrid" ItemsSource="{Binding Orders}"
+                              FontSize="16" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              EnableColumnVirtualization="False"
+                              EnableRowVirtualization="True"
+                              MouseDoubleClick="ViewSelectedOrder_Button_Click"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding order_id}" IsReadOnly="True" Width="70">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Номер" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                                <DataGridTextColumn.CellStyle>
+                                    <Style BasedOn="{StaticResource DataGridCell_NoBorder_Style}" TargetType="DataGridCell">
+                                        <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.CellStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding telegram_id}" CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="140">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Идентификатор пользователя" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding order_timestamp, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View}" 
+                                                CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="130">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Дата заказа" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn SortMemberPath="pickup_point_address" Width="250">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">
+                                        <Style.Setters>
+                                            <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+                                        </Style.Setters>
+                                    </Style>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding pickup_point_address}" TextWrapping="Wrap" Margin="3, 0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="Пункт выдачи" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Binding="{Binding status, Converter={StaticResource StatusConverter}}" CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="100">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Статус" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+
+                <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Фильтр"/>
+
+                        <Grid Grid.Row="1" Margin="5, 0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0, 5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Номер" FontSize="16" Margin="0, 0, 0, 5"/>
+                                <TextBox Grid.Row="1" FontSize="16" x:Name="Orders_Order_Id_Filter_TextBox"
+                                         Text="{Binding OrdersFilter.order_id, Converter={StaticResource StringToIntConverter}}"
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+                                <TextBlock Grid.Row="1" Text="Номер"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Orders_Order_Id_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Grid.Row="1" Margin="0, 5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Идентификатор пользователя" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+                                <TextBox FontSize="16" Grid.Row="1" x:Name="Orders_Telegram_Id_Filter_TextBox"
+                                         Text="{Binding OrdersFilter.telegram_id, Converter={StaticResource StringToIntConverter}}"
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+                                <TextBlock Grid.Row="1" Text="Идентификатор пользователя"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Orders_Telegram_Id_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Grid.Row="2" Margin="0, 5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Дата заказа" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+
+                                <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
+                                                     x:Name="Orders_Order_DateTime_From_Filter_TextBox"
+                                                     Value="{Binding OrdersFilter.order_timestamp_from, Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"/>
+
+                                <TextBlock Grid.Row="1" Text="От"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Orders_Order_DateTime_From_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Orders_Order_DateTime_From_Filter_TextBox}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                
+                                <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 0"/>
+
+                                <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
+                                                     x:Name="Orders_Order_DateTime_To_Filter_TextBox"
+                                                     Value="{Binding OrdersFilter.order_timestamp_to, Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_59}}"/>
+                                <TextBlock Grid.Row="3" Text="До"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Orders_Order_DateTime_To_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Orders_Order_DateTime_To_Filter_TextBox}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                            </Grid>
+
+                            <Grid Grid.Row="3" Margin="0, 5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Пункт выдачи" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+                                <TextBox FontSize="16" Grid.Row="1" x:Name="Orders_Adress_Filter_TextBox"
+                                         Text="{Binding OrdersFilter.pickup_point_address, Converter={StaticResource TextToSerchableConverter}}"/>
+                                <TextBlock Grid.Row="1" Text="Пункт выдачи"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=Orders_Adress_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Grid.Row="4" Margin="0, 5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Статус" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+
+                                <ComboBox Grid.Row="1" FontSize="16" Margin="0, 0, 0, 5"
+                                          SelectedItem="{Binding OrdersFilter.status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource KVPairToDataConverter}, ConverterParameter=Key}"
+                                          ItemsSource="{StaticResource Statuses_List}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Grid.Column="0" Text="{Binding Value}" FontSize="18" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+
+                            <Button Grid.Row="7" Style="{StaticResource Button_Style}" 
+                                    Click="OrdersFilter_Button_Click" Content="Поиск" 
+                                    Margin="5" Padding="5" Height="Auto"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <GridSplitter Grid.Column="3" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+
+                <Grid Grid.Column="4" Visibility="Visible" Width="300">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=Orders_DataGrid}" Value="0">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Информация о заказе"/>
+                    
+                    
+                </Grid>
+            </Grid>
         </Grid>
 
-        <Grid Name="Products_Grid" Grid.Row="1" Visibility="Visible">
+        <Grid Name="Products_Grid" Grid.Row="1" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="Auto"/>

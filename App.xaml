@@ -3,7 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:AdminPannel"
              xmlns:converters="clr-namespace:AdminPannel.Converters"
-             
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" 
+             xmlns:sys="clr-namespace:System;assembly=netstandard"
+             xmlns:coll="clr-namespace:System.Collections.Generic;assembly=netstandard"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
@@ -14,6 +16,20 @@
             <converters:MultiObjectConverter x:Key="MultiObjectConverter"/>
             <converters:TextBlockMaxWidthConverter x:Key="TextBlockMaxWidthConverter"/>
             <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
+            <converters:DateTimeToStringConverter x:Key="DateTimeToStringConverter"/>
+            <converters:StatusConverter x:Key="StatusConverter"/>
+            <converters:DateTimeSecondsConverter x:Key="DateTimeSecondsConverter"/>
+            <converters:KVPairToDataConverter x:Key="KVPairToDataConverter"/>
+
+            <sys:Int32 x:Key="int_0">0</sys:Int32>
+            <sys:Int32 x:Key="int_59">59</sys:Int32>
+
+            <x:Array x:Key="Statuses_List" Type="{x:Type local:KVPair}">
+                <local:KVPair Key="created" Value="Создан"/>
+                <local:KVPair Key="canceled" Value="Отменён"/>
+                <local:KVPair Key="completed" Value="Выдан"/>
+                <local:KVPair Key="submitted" Value="Подтверждён"/>
+            </x:Array>
 
             <!--Window-->
             <Style x:Key="Window_Style" TargetType="{x:Type Window}">
