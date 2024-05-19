@@ -1,10 +1,13 @@
 ﻿using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.DirectoryServices;
 using System.Dynamic;
 using System.IO;
+using System.Net;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
@@ -17,6 +20,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shell;
 using System.Windows.Threading;
+
+using AdminPannel.Converters;
 
 using Dapper;
 
@@ -826,7 +831,7 @@ namespace AdminPannel
 
         #endregion
 
-        #region Orders
+        #region Orders Grid
 
         enum OrdersType
         {
@@ -878,6 +883,7 @@ namespace AdminPannel
 
         private async Task OnOrdersSelected()
         {
+            await UpdateOrdersPickupPoints();
             var menu = Orders_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Новые")).First();
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
             current_orders_type = OrdersType.New;
@@ -907,6 +913,9 @@ namespace AdminPannel
 
                 Orders = new ObservableCollection<object>(orders);
             }
+
+            if (Orders.Any())
+                this.Orders_DataGrid.SelectedItem = Orders.First();
         }
 
         private (String sql, object? data) CreateOrdersSQL(bool OrdersShouldBeFiltered = false)
@@ -945,6 +954,7 @@ namespace AdminPannel
                         @$"SELECT
                             o.id AS order_id,
                             us.telegram_id,
+                            us.name as user_name,
                             o.pickup_point_id,
                             pp.address AS pickup_point_address,
                             o.status,
@@ -971,10 +981,6 @@ namespace AdminPannel
         {
             await UpdateOrders(OrdersShouldBeFiltered: true);
         }
-        private void ViewSelectedOrder_Button_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
 
         private dynamic? _orders_filter = new ExpandoObject();
         public dynamic? OrdersFilter
@@ -988,7 +994,428 @@ namespace AdminPannel
         }
 
 
+        private ObservableCollection<KeyValuePair<String, String>> statuses = new(StatusConverter.Statuses.ToList());
+        public ObservableCollection<KeyValuePair<String, String>> Statuses
+        {
+            get { return statuses; }
+            set
+            {
+                statuses.Clear();
+                statuses = value;
+                OnPropertyChanged(nameof(Statuses));
+            }
+        }
+
+
+        public ObservableCollection<object> _orders_pickup_points = new();
+        public ObservableCollection<object> Orders_PickupPoints
+        {
+            get { return _orders_pickup_points; }
+            set
+            {
+                _orders_pickup_points.Clear();
+                _orders_pickup_points = value;
+                OnPropertyChanged(nameof(Orders_PickupPoints));
+            }
+        }
+
+        private async Task UpdateOrdersPickupPoints()
+        {
+            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+            {
+                var p_points = await conn.QueryAsExpandoAsync("SELECT id, address FROM pickup_points WHERE is_receiving_orders = True AND is_works = True");
+                Orders_PickupPoints = new ObservableCollection<object>(p_points);
+            }
+        }
+
+        private dynamic? _orders_current_pickup_point;
+        public dynamic? Orders_Current_PickupPoint
+        {
+            get { return _orders_current_pickup_point; }
+            set
+            {
+                _orders_current_pickup_point = value;
+                OnPropertyChanged(nameof(Orders_Current_PickupPoint));
+            }
+        }
+
+        private dynamic? _orders_original_pickup_point;
+        public dynamic? Orders_Original_PickupPoint
+        {
+            get { return _orders_original_pickup_point; }
+            set
+            {
+                _orders_original_pickup_point = value;
+                OnPropertyChanged(nameof(Orders_Original_PickupPoint));
+            }
+        }
+
+        private dynamic? _selected_order;
+        public dynamic? Selected_Order
+        {
+            get { return _selected_order; }
+            set
+            {
+                _selected_order = value;
+                OnPropertyChanged(nameof(Selected_Order));
+            }
+        }
+
+        private void Orders_DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (Orders_PickupPoints is null)
+                return;
+
+            if (Selected_Order is null) 
+                return;
+
+            int pp_id = Selected_Order.pickup_point_id;
+
+            var found = _orders_pickup_points.Cast<dynamic>().Where(x => x.id == pp_id);
+            
+            if (!found.Any())
+            {
+                Orders_Current_PickupPoint = new
+                {
+                    id = -1,
+                    address = ""
+                };
+
+                Orders_Original_PickupPoint = new
+                {
+                    id = -1,
+                    address = ""
+                };
+
+                return;
+            }
+
+            Orders_Current_PickupPoint = found.First();
+
+            Orders_Original_PickupPoint = new
+            {
+                id = pp_id,
+                address = Selected_Order.pickup_point_address
+            };
+
+
+            var status = Selected_Order.status;
+            var found_status = Statuses.Where(x => x.Key.Equals(status)).ToList();
+            if (!found_status.Any())
+                return;
+
+            Orders_Current_Status = found_status.First();
+
+            Orders_Original_Status = new
+            {
+                Key = Selected_Order.status
+            };
+
+
+            OrderCanBeChanged = !"canceled".Equals(status);
+        }
+        
+        private void Orders_PickupPoint_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (Orders_PickupPoints is null)
+                return;
+
+            if (Selected_Order is null)
+                return;
+
+            int pp_id = Selected_Order.pickup_point_id;
+
+            var found = _orders_pickup_points.Cast<dynamic>().Where(x => x.id == pp_id);
+
+            if (!found.Any())
+            {
+                Orders_Current_PickupPoint = new
+                {
+                    id = -1,
+                    address = ""
+                };
+
+                Orders_Original_PickupPoint = new
+                {
+                    id = -1,
+                    address = ""
+                };
+
+                return;
+            }
+
+            Orders_Current_PickupPoint = found.First();
+
+            Orders_Original_PickupPoint = new
+            {
+                id = pp_id,
+                address = Selected_Order.pickup_point_address
+            };
+        }
+
+        private async void Orders_PickupPoint_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (_orders_current_pickup_point is null || _selected_order is null)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "UPDATE orders SET pickup_point_id = @pickup_point_id WHERE id = @id";
+
+                    var data = new
+                    {
+                        pickup_point_id = _orders_current_pickup_point.id,
+                        id = _selected_order.pickup_point_id
+                    };
+
+                    int rowsAffected = await conn.ExecuteAsync(sql, data);
+
+                    _selected_order.pickup_point_address = _orders_current_pickup_point.address;
+
+                    if (_orders_current_pickup_point is ExpandoObject exp)
+                    {
+                        Orders_Original_PickupPoint = exp.Copy();
+                    }
+
+                    var mb_result = MessageBox.Show("Создать шаблон уведомления пользователя о смене места выдачи заказа?",
+                        "Требуется подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (mb_result is MessageBoxResult.Yes)
+                    {
+                        OrderNotification = $"Уважаемый, {_selected_order.user_name}. Уведомляем Вас о смене пункта выдачи вашего заказа.\n" + 
+                            $"Новый пункт выдачи: {_selected_order.pickup_point_address}.\n" +
+                            $"Просим прощения за предоставленные неудобства.";
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+
+        private dynamic? _orders_current_status;
+        public dynamic? Orders_Current_Status
+        {
+            get { return _orders_current_status; }
+            set
+            {
+                _orders_current_status = value;
+                OnPropertyChanged(nameof(Orders_Current_Status));
+            }
+        }
+
+        private dynamic? _orders_original_status;
+        public dynamic? Orders_Original_Status
+        {
+            get { return _orders_original_status; }
+            set
+            {
+                _orders_original_status = value;
+                OnPropertyChanged(nameof(Orders_Original_Status));
+            }
+        }
+
+        private bool _order_can_be_changed = true;
+        public bool OrderCanBeChanged
+        {
+            get => _order_can_be_changed;
+            set
+            {
+                _order_can_be_changed= value;
+                OnPropertyChanged(nameof(OrderCanBeChanged));
+            }
+        }
+
+        private void Orders_Status_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (Statuses is null)
+                return;
+
+            if (Selected_Order is null)
+                return;
+
+            var status = Selected_Order.status;
+            var found_status = Statuses.Where(x => x.Key.Equals(status)).ToList();
+            if (!found_status.Any())
+                return;
+
+            Orders_Current_Status = found_status.First();
+
+            Orders_Original_Status = new
+            {
+                Key = Selected_Order.status
+            };
+        }
+
+        private async Task<IEnumerable<dynamic>> GetOrderShortage(int order_id)
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql =
+                                @"SELECT
+	                                o.id as order_id,
+	                                oi.product_id, 
+	                                oi.quantity user_quantity,
+	                                pr.name,
+	                                pr.quantity shop_quantity,
+                                    oi.quantity - pr.quantity as shortage
+                                FROM order_items oi
+                                JOIN products pr ON oi.product_id = pr.id
+                                JOIN orders o ON oi.order_id = o.id
+                                WHERE o.id = @order_id AND oi.quantity > pr.quantity
+                                ORDER BY product_id";
+
+                    var data = new
+                    {
+                        order_id
+                    };
+
+                    return await conn.QueryAsExpandoAsync(sql, data);
+                }
+            }
+            catch (Exception)
+            {
+                return [];
+            }
+        }
+
+        private async void Orders_Status_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (_orders_current_status is null || _selected_order is null)
+                return;
+
+            string before = _selected_order.status;
+
+            if ("canceled".Equals(before))
+            {
+                var mb_result = MessageBox.Show("Вы точно уверены, что хотите восстановить отменённый заказ?",
+                        "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+
+                if (mb_result is not MessageBoxResult.OK)
+                    return;
+            }
+
+            try
+            {
+                await using ( var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "UPDATE orders SET status = @status WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = _selected_order.order_id,
+                        status = _orders_current_status.Key
+                    };
+
+                    int rowsAffected = await conn.ExecuteAsync(sql, data);
+
+                    _selected_order.status = _orders_current_status.Key;
+
+                    Orders_Original_Status = new
+                    {
+                        Key = _selected_order.status
+                    };
+                }
+            }
+            catch (Exception)
+            {
+                if (await this.GetOrderShortage(_selected_order.order_id) is not IEnumerable<dynamic> shortage || shortage.Count() is 0)
+                {
+                    MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                        "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                    return;
+                }
+
+                var to_view = String.Join('\n', shortage.Select(x => $"[{x.product_id}] {x.name} - {x.shortage} шт."));
+
+                MessageBox.Show($"Недостаточное количество товаров на складе:\n{to_view}",
+                        "Недостаток на складе", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+
+            string after = _selected_order.status;
+
+            if ("ready".Equals(after))
+            {
+                await Order_SendReadyNotification(_selected_order.order_id);
+            }
+        }
+
+        private async void Order_SendReadyNotification(int order_id)
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql =
+                                @"INSERT INTO order_notifications 
+                                (order_id) VALUES (@order_id)";
+
+                    var data = new
+                    {
+                        order_id = order_id
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        private String _order_notification = String.Empty;
+        public String OrderNotification
+        {
+            get { return _order_notification; }
+            set
+            {
+                _order_notification = value;
+                OnPropertyChanged(nameof(OrderNotification));
+            }
+        }
+
+        private async void Order_SendNotification_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selected_order is null)
+                return;
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql =
+                                @"INSERT INTO order_notifications 
+                                (order_id, message, is_important) 
+                                VALUES (@order_id, @message, True)";
+
+                    var data = new
+                    {
+                        order_id = _selected_order.order_id,
+                        message = _order_notification
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+                }
+            }
+            catch (Exception)
+            {
+                
+            }
+        }
 
         #endregion
+
+
     }
 }

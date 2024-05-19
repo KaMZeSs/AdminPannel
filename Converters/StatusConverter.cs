@@ -10,17 +10,17 @@ namespace AdminPannel.Converters
 {
     internal class StatusConverter : IValueConverter
     {
-        static Dictionary<string, string> statuses;
+        public static Dictionary<string, string> Statuses;
 
         static StatusConverter()
         {
             if (System.Windows.Application.Current.Resources["Statuses_List"] is IEnumerable<KVPair> kVPairs)
             {
-                statuses = new Dictionary<string, string>(kVPairs.Select(x => x.ToKeyValuePair()));
+                Statuses = new Dictionary<string, string>(kVPairs.Select(x => x.ToKeyValuePair()));
             }
             else
             {
-                statuses = new Dictionary<string, string>();
+                Statuses = new Dictionary<string, string>();
             }
         }
 
@@ -28,18 +28,9 @@ namespace AdminPannel.Converters
         {
             if (value is String status)
             {
-                if (statuses.TryGetValue(status, out var statusValue))
+                if (Statuses.TryGetValue(status, out var statusValue))
                     return statusValue;
                 return status;
-
-                //return status switch
-                //{
-                //    "created" => "Создан",
-                //    "canceled" => "Отменён",
-                //    "completed" => "Выдан",
-                //    "submitted" => "Подтверждён",
-                //    _ => status
-                //};
             }
 
             return String.Empty;

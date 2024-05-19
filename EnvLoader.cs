@@ -47,5 +47,14 @@ namespace AdminPannel
         {
             return KeyValuePair.Create(Key, Value);
         }
+
+        public static KVPair FromKeyValuePair(KeyValuePair<String, String> pair)
+        {
+            return new KVPair()
+            {
+                Key = pair.Key,
+                Value = pair.Value
+            };
+        }
     }
 }

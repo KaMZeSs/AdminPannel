@@ -156,72 +156,8 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="450"/>
                 </Grid.ColumnDefinitions>
-
-                <Grid Grid.Column="2">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <DataGrid x:Name="Orders_DataGrid" ItemsSource="{Binding Orders}"
-                              FontSize="16" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling"
-                              EnableColumnVirtualization="False"
-                              EnableRowVirtualization="True"
-                              MouseDoubleClick="ViewSelectedOrder_Button_Click"
-                              SelectionMode="Single">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding order_id}" IsReadOnly="True" Width="70">
-                                <DataGridTextColumn.Header>
-                                    <TextBlock Text="Номер" TextAlignment="Center" TextWrapping="Wrap"/>
-                                </DataGridTextColumn.Header>
-                                <DataGridTextColumn.CellStyle>
-                                    <Style BasedOn="{StaticResource DataGridCell_NoBorder_Style}" TargetType="DataGridCell">
-                                        <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                    </Style>
-                                </DataGridTextColumn.CellStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding telegram_id}" CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="140">
-                                <DataGridTextColumn.Header>
-                                    <TextBlock Text="Идентификатор пользователя" TextAlignment="Center" TextWrapping="Wrap"/>
-                                </DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding order_timestamp, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View}" 
-                                                CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="130">
-                                <DataGridTextColumn.Header>
-                                    <TextBlock Text="Дата заказа" TextAlignment="Center" TextWrapping="Wrap"/>
-                                </DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                            <DataGridTemplateColumn SortMemberPath="pickup_point_address" Width="250">
-                                <DataGridTemplateColumn.CellStyle>
-                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">
-                                        <Style.Setters>
-                                            <Setter Property="TextBlock.TextAlignment" Value="Left"/>
-                                        </Style.Setters>
-                                    </Style>
-                                </DataGridTemplateColumn.CellStyle>
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding pickup_point_address}" TextWrapping="Wrap" Margin="3, 0"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.Header>
-                                    <TextBlock Text="Пункт выдачи" TextAlignment="Center" TextWrapping="Wrap"/>
-                                </DataGridTemplateColumn.Header>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Binding="{Binding status, Converter={StaticResource StatusConverter}}" CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="100">
-                                <DataGridTextColumn.Header>
-                                    <TextBlock Text="Статус" TextAlignment="Center" TextWrapping="Wrap"/>
-                                </DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-
-                <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
 
                 <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="0">
                     <Grid>
@@ -230,7 +166,7 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-
+                        
                         <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Фильтр"/>
 
                         <Grid Grid.Row="1" Margin="5, 0">
@@ -328,8 +264,8 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                
-                                <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 0"/>
+
+                                <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
 
                                 <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
                                                      x:Name="Orders_Order_DateTime_To_Filter_TextBox"
@@ -386,7 +322,6 @@
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Text="Статус" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
-
                                 <ComboBox Grid.Row="1" FontSize="16" Margin="0, 0, 0, 5"
                                           SelectedItem="{Binding OrdersFilter.status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource KVPairToDataConverter}, ConverterParameter=Key}"
                                           ItemsSource="{StaticResource Statuses_List}">
@@ -405,28 +340,255 @@
                     </Grid>
                 </Border>
 
-                <GridSplitter Grid.Column="3" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
-
-                <Grid Grid.Column="4" Visibility="Visible" Width="300">
-                    <Grid.Style>
-                        <Style TargetType="Grid">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=Orders_DataGrid}" Value="0">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
+                <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+                
+                <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition/>
                     </Grid.RowDefinitions>
 
-                    <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Информация о заказе"/>
-                    
-                    
+                    <DataGrid x:Name="Orders_DataGrid" ItemsSource="{Binding Orders}"
+                              FontSize="16" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              EnableColumnVirtualization="False"
+                              EnableRowVirtualization="True"
+                              SelectionMode="Single"
+                              SelectionChanged="Orders_DataGrid_SelectionChanged"
+                              SelectedItem="{Binding Selected_Order, Mode=TwoWay}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding order_id}" IsReadOnly="True" Width="70">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Номер" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                                <DataGridTextColumn.CellStyle>
+                                    <Style BasedOn="{StaticResource DataGridCell_NoBorder_Style}" TargetType="DataGridCell">
+                                        <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.CellStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding telegram_id}" CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="140">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Идентификатор пользователя" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding order_timestamp, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View}" 
+                                                CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="130">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Дата заказа" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn SortMemberPath="pickup_point_address" Width="250">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">
+                                        <Style.Setters>
+                                            <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+                                        </Style.Setters>
+                                    </Style>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding pickup_point_address}" TextWrapping="Wrap" Margin="3, 0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="Пункт выдачи" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Binding="{Binding status, Converter={StaticResource StatusConverter}}" CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="150">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Статус" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
+
+                <GridSplitter Grid.Column="3" BorderThickness="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
+
+                <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Информация о заказе"/>
+
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition />
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Номер: " FontSize="16" Margin="5, 7"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.order_id, ElementName=Orders_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Телеграм: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.telegram_id, ElementName=Orders_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="2" >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Имя в телеграме: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.user_name, ElementName=Orders_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Дата заказа: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.order_timestamp, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View, ElementName=Orders_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Пункт выдачи: " FontSize="16" Margin="5, 7"/>
+
+                                <ComboBox Grid.Column="1" FontSize="16" Margin="5, 7, 0, 7"
+                                          SelectedItem="{Binding Orders_Current_PickupPoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          ItemsSource="{Binding Orders_PickupPoints}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Grid.Column="0" Text="{Binding address}" FontSize="18" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                        Click="Orders_PickupPoint_Confirm_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="Orders_Current_PickupPoint.id"/>
+                                            <Binding Path="Orders_Original_PickupPoint.id"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+
+                                    <Image Source="Assets/Confirm.png"/>
+                                </Button>
+
+                                <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                        Click="Orders_PickupPoint_Decline_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="Orders_Current_PickupPoint.id"/>
+                                            <Binding Path="Orders_Original_PickupPoint.id"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                    <Image Source="Assets/Cancel.png"/>
+                                </Button>
+                            </Grid>
+
+                            <Grid Grid.Row="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Статус: " FontSize="16" Margin="5, 7"/>
+
+                                <ComboBox Grid.Column="1" FontSize="16" Margin="5, 7, 0, 7" x:Name="Statuses_ComboBox"
+                                          SelectedItem="{Binding Orders_Current_Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          ItemsSource="{Binding Statuses, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Grid.Column="0" Text="{Binding Value}" FontSize="18" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                        Click="Orders_Status_Confirm_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="Orders_Current_Status.Key"/>
+                                            <Binding Path="Orders_Original_Status.Key"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                    <Image Source="Assets/Confirm.png"/>
+                                </Button>
+
+                                <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                        Click="Orders_Status_Decline_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="Orders_Current_Status.Key"/>
+                                            <Binding Path="Orders_Original_Status.Key"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                    <Image Source="Assets/Cancel.png"/>
+                                </Button>
+                            </Grid>
+                            
+                            <!--А тут список с товарами заказа с возможностью изменения их количества и открытия информации о товаре. Прямо в DataGrid А почему и нет?-->
+
+                            <Grid Grid.Row="7">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <GridSplitter Grid.Row="0" Background="LightGray" Height="1" HorizontalAlignment="Stretch"/>
+
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="Уведомление для пользователя: " FontSize="16" Margin="5, 7" TextWrapping="Wrap" Width="130"/>
+                                    <TextBox Grid.Column="1" Text="{Binding OrderNotification}" FontSize="16" Margin="5, 7" MaxLength="1000" AcceptsReturn="True" MaxLines="5" TextWrapping="Wrap"/>
+                                </Grid>
+                                <Button Grid.Row="2" Style="{StaticResource Button_Style}" 
+                                        Click="Order_SendNotification_Button_Click" Content="Отправить уведомление" 
+                                        Margin="5" Padding="5" Height="Auto"/>
+
+                            </Grid>
+                            
+                            
+
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                
             </Grid>
         </Grid>
 

@@ -26,9 +26,10 @@
 
             <x:Array x:Key="Statuses_List" Type="{x:Type local:KVPair}">
                 <local:KVPair Key="created" Value="Создан"/>
-                <local:KVPair Key="canceled" Value="Отменён"/>
-                <local:KVPair Key="completed" Value="Выдан"/>
                 <local:KVPair Key="submitted" Value="Подтверждён"/>
+                <local:KVPair Key="ready" Value="Готов к получению"/>
+                <local:KVPair Key="completed" Value="Выдан"/>
+                <local:KVPair Key="canceled" Value="Отменён"/>
             </x:Array>
 
             <!--Window-->
