@@ -30,6 +30,8 @@ using MoreLinq.Extensions;
 
 using Npgsql;
 
+using Xceed.Wpf.AvalonDock.Themes;
+
 namespace AdminPannel
 {
     /// <summary>
@@ -48,7 +50,8 @@ namespace AdminPannel
             onGridChange = new Dictionary<Grid, Func<Task>>()
             {
                 { this.Products_Grid, this.OnProductSelected },
-                { this.Orders_Grid, this.OnOrdersSelected }
+                { this.Orders_Grid, this.OnOrdersSelected },
+                { this.SpecialOffers_Grid, this.OnSpecialOffersSelected }
             };
 
             _new_category = String.Empty;
@@ -88,7 +91,7 @@ namespace AdminPannel
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Заказы")).First();
+            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Акции")).First();
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
         }
@@ -1061,7 +1064,7 @@ namespace AdminPannel
             }
         }
 
-        private void Orders_DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void Orders_DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (Orders_PickupPoints is null)
                 return;
@@ -1111,8 +1114,9 @@ namespace AdminPannel
                 Key = Selected_Order.status
             };
 
-
             OrderCanBeChanged = !"canceled".Equals(status);
+
+            await UpdateCurrentOrderItems(Selected_Order.order_id);
         }
         
         private void Orders_PickupPoint_Decline_Button_Click(object sender, RoutedEventArgs e)
@@ -1414,8 +1418,466 @@ namespace AdminPannel
             }
         }
 
+        private ObservableCollection<object> _current_order_items = new();
+        public ObservableCollection<object> CurrentOrderItems
+        {
+            get { return _current_order_items; }
+            set
+            {
+                _current_order_items.Clear();
+                _current_order_items = value;
+                OnPropertyChanged(nameof(CurrentOrderItems));
+                OnPropertyChanged(nameof(CurrentOrderPrice));
+            }
+        }
+
+        private async Task UpdateCurrentOrderItems(int order_id)
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql =
+                                @"SELECT
+                                    oi.id,
+                                    pr.id as product_id,
+                                    pr.name as product_name,
+                                    oi.quantity,
+                                    oi.price,
+                                    oi.price * oi.quantity AS total_price
+                                FROM order_items oi
+                                JOIN products pr ON pr.id = oi.product_id
+                                WHERE oi.order_id = @order_id";
+
+                    var data = new
+                    {
+                        order_id = order_id
+                    };
+
+                    var res = await conn.QueryAsExpandoAsync(sql, data);
+                    MoreEnumerable.ForEach(res, (x) => x.changeable_quantity = x.quantity);
+                    CurrentOrderItems = new(res);
+                }
+            }
+            catch { }
+        }
+
+        private async Task UpdateCurrentOrderInfo(int order_id)
+        {
+            var vs = CreateOrdersSQL(false);
+            vs.sql = vs.sql.Replace("WHERE o.status = 'created'", String.Empty).Replace("ORDER BY o.order_timestamp DESC", String.Empty);
+            vs.sql += "Where o.id = @order_id";
+            vs.data = new
+            {
+                order_id
+            };
+
+            dynamic order;
+
+            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+            {
+                var data = await conn.QueryAsExpandoAsync(vs.sql, vs.data);
+                if (data is null)
+                    return;
+                order = data.First() as dynamic;
+            }
+
+            var old = _orders.First(x => ((dynamic)x).order_id == order_id);
+
+            var index = _orders.IndexOf(old);
+            _orders[index] = order;
+            Orders_DataGrid.SelectedItem = order;
+        }
+
+        public int CurrentOrderPrice
+        {
+            get
+            {
+                return _current_order_items.Sum(x => ((dynamic)x)?.total_price);
+            }
+        }
+
+        private async void Order_Item_Update_Quantity_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var order_item = (sender as FrameworkElement)?.DataContext as dynamic;
+
+            if (order_item is null)
+                return;
+
+            if (MessageBox.Show($"Вы точно уверены, что хотите изменить количество данного товара в заказе?",
+                    "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning)
+                is not MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "UPDATE order_items SET quantity = @quantity WHERE id = @id";
+
+                    var data = new
+                    {
+                        quantity = order_item.changeable_quantity,
+                        id = order_item.id
+                    };
+
+                    int rowsAffected = await conn.ExecuteAsync(sql, data);
+
+                    order_item.quantity = order_item.changeable_quantity;
+                }
+                if (Selected_Order is not null)
+                    await UpdateCurrentOrderInfo(Selected_Order.order_id);
+            }
+            catch (Npgsql.PostgresException ex)
+            {
+                if (ex.ConstraintName?.Contains("quantity") ?? true)
+                {
+                    MessageBox.Show("Недостаточно товаров на складе.",
+                        "Ошибка изменения данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void Order_Item_Delete_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (_current_order_items.Count is 1)
+            {
+                MessageBox.Show($"Нельзя оставлять заказ без товаров!",
+                    "Подтвердите действие", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var order_item = (sender as FrameworkElement)?.DataContext as dynamic;
+
+            if (order_item is null)
+                return;
+
+            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данный товар из заказа без возможности восстановления?",
+                    "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning)
+                is not MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "DELETE FROM order_items WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = order_item.id
+                    };
+
+                    int rowsAffected = await conn.ExecuteAsync(sql, data);
+                }
+
+                if (Selected_Order is not null)
+                    await UpdateCurrentOrderInfo(Selected_Order.order_id);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void Order_Item_Info_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var order_item = (sender as FrameworkElement)?.DataContext as dynamic;
+
+            if (order_item is null)
+                return;
+
+            var vs = CreateProductSQL(false);
+            vs.sql = vs.sql.Replace("ORDER BY p.id", String.Empty).Replace("WHERE p.category_id = @category_id", String.Empty);
+            vs.sql += "WHERE p.id = @product_id";
+            vs.data = new
+            {
+                order_item.product_id
+            };
+
+            dynamic product;
+
+            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+            {
+                var data = await conn.QueryAsExpandoAsync(vs.sql, vs.data);
+                if (data is null)
+                    return;
+                product = data.First() as dynamic;
+            }
+
+            var window = new ProductInfoWindow(product, false);
+            window.ShowDialog();
+        }
+
+
         #endregion
 
+        #region SpecialOffers
 
+        enum SpecialOffersType
+        {
+            Current,
+            Planned,
+            Completed
+        }
+
+        private SpecialOffersType current_special_offer_type;
+
+        private async void SpecialOffers_MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem item)
+                return;
+
+            current_special_offer_type = item.Header switch
+            {
+                "Текущие" => SpecialOffersType.Current,
+                "Запланированные" => SpecialOffersType.Planned,
+                "Завершённые" => SpecialOffersType.Completed,
+                _ => SpecialOffersType.Current
+            };
+
+            await UpdateSpecialOffers();
+        }
+        private void SpecialOffers_MenuItem_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem item)
+                return;
+            _isHandlingClick = true;
+            MoreEnumerable.ForEach(SpecialOffers_Menu.Items.Cast<MenuItem>().Where(x => x != item), (x) =>
+            {
+                x.IsChecked = false;
+            });
+            item.IsChecked = true;
+            _isHandlingClick = false;
+        }
+        private void SpecialOffers_MenuItem_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_isHandlingClick)
+                return;
+            if (sender is not MenuItem item)
+                return;
+
+            _isHandlingClick = true;
+            item.IsChecked = true;
+            _isHandlingClick = false;
+        }
+
+        private async Task OnSpecialOffersSelected()
+        {
+            var menu = SpecialOffers_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Текущие")).First();
+            menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
+            current_special_offer_type = SpecialOffersType.Current;
+            await UpdateSpecialOffers();
+        }
+
+        public ObservableCollection<object> _special_offers = new();
+        public ObservableCollection<object> SpecialOffers
+        {
+            get { return _special_offers; }
+            set
+            {
+                _special_offers.Clear();
+                _special_offers = value;
+                OnPropertyChanged(nameof(SpecialOffers));
+            }
+        }
+
+        private async Task UpdateSpecialOffers(bool ShouldBeFiltered = false)
+        {
+            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+            {
+                var cmd = this.CreateSpecialOffersSQL(ShouldBeFiltered);
+
+                var special_offers = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
+
+                MoreEnumerable.ForEach(special_offers, x => x.changeable_discount = x.discount);
+
+                SpecialOffers = new ObservableCollection<object>(special_offers);
+            }
+
+            if (SpecialOffers.Any())
+                this.SpecialOffers_DataGrid.SelectedItem = SpecialOffers.First();
+        }
+
+        private (String sql, object? data) CreateSpecialOffersSQL(bool ShouldBeFiltered = false)
+        {
+            var filter_string = String.Empty;
+
+            if (ShouldBeFiltered && SpecialOffersFilter is not null)
+            {
+                var expandoDict = (IDictionary<string, object>)SpecialOffersFilter;
+                var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);
+
+                foreach (var kvp in filter)
+                {
+                    filter_string += kvp.Key switch
+                    {
+                        "so_id" => " AND so.id = @so_id",
+                        "product_id" => " AND so.product_id = @product_id",
+                        "discount_from" => " AND so.discount >= @discount_from",
+                        "discount_to" => " AND so.discount <= @discount_to",
+                        _ => ""
+                    };
+                }
+
+                if (!expandoDict.ContainsKey("datetime_to"))
+                    SpecialOffersFilter.datetime_to = null;
+                if (!expandoDict.ContainsKey("datetime_from"))
+                    SpecialOffersFilter.datetime_from = null;
+
+                filter_string += " AND (so.start_datetime <= @datetime_to OR @datetime_to IS NULL) AND (so.end_datetime >= @datetime_from OR @datetime_from IS NULL)";
+            }
+
+            var sql_status = current_special_offer_type switch
+            {
+                SpecialOffersType.Current => "LOCALTIMESTAMP BETWEEN so.start_datetime AND so.end_datetime",
+                SpecialOffersType.Planned => "so.start_datetime > LOCALTIMESTAMP",
+                SpecialOffersType.Completed => "so.end_datetime < LOCALTIMESTAMP",
+                _ => "LOCALTIMESTAMP BETWEEN so.start_datetime AND so.end_datetime",
+            };
+
+            var sql =
+                        @$"
+                        SELECT
+                            so.id AS so_id,
+                            so.product_id AS product_id,
+                            pr.name AS product_name,
+                            so.start_datetime,
+                            so.end_datetime,
+                            so.discount,
+                            pr.price AS def_price,
+                            (pr.price - pr.price * so.discount / 100)::integer AS new_price
+                        FROM special_offers so
+                        JOIN products pr ON so.product_id = pr.id
+                        WHERE {sql_status} {filter_string}
+                        ORDER BY so.id DESC";
+
+            return (sql, _special_offers_filter);
+        }
+        
+        private async void SpecialOffersFilter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateSpecialOffers(ShouldBeFiltered: true);
+        }
+
+        private dynamic _special_offers_filter = new ExpandoObject();
+        public dynamic SpecialOffersFilter
+        {
+            get { return _special_offers_filter; }
+            set
+            {
+                _special_offers_filter = value;
+                OnPropertyChanged(nameof(SpecialOffersFilter));
+            }
+        }
+        
+        private dynamic? _selected_special_offer;
+        public dynamic? SelectedSpecialOffer
+        {
+            get { return _selected_special_offer; }
+            set
+            {
+                _selected_special_offer = value;
+                OnPropertyChanged(nameof(SelectedSpecialOffer));
+            }
+        }
+
+        private async void SpecialOffers_DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            
+        }
+        
+        private void SpecialOffers_Find_Product_Filter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new SelectProductWindow();
+            var res = window.ShowDialog();
+            if (res == true)
+            {
+                var selected = window.SelectedProduct;
+                SpecialOffersFilter.product_id = selected.id;
+            }
+        }
+
+        private async Task UpdateCurrentSpecialOfferInfo(int so_id)
+        {
+            var vs = CreateSpecialOffersSQL(false);
+
+            var where = vs.sql.LastIndexOf("WHERE");
+            vs.sql = vs.sql.Substring(0, where);
+
+            vs.sql += "WHERE so.id = @so_id";
+            vs.data = new
+            {
+                so_id
+            };
+
+            dynamic special_offer;
+
+            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+            {
+                var data = await conn.QueryAsExpandoAsync(vs.sql, vs.data);
+                if (data is null)
+                    return;
+                special_offer = data.First() as dynamic;
+            }
+
+            var old = _special_offers.First(x => ((dynamic)x).so_id == so_id);
+
+            var index = _special_offers.IndexOf(old);
+            _special_offers[index] = special_offer;
+            SpecialOffers_DataGrid.SelectedItem = special_offer;
+        }
+
+        private async void SpecialOffers_Discount_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedSpecialOffer is null)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @"UPDATE special_offers SET discount = @discount WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = SelectedSpecialOffer.so_id,
+                        discount = SelectedSpecialOffer.changeable_discount
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+
+        private void SpecialOffers_Discount_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedSpecialOffer != null)
+                SelectedSpecialOffer.changeable_discount = SelectedSpecialOffer.discount;
+        }
+
+        #endregion
     }
 }

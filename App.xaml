@@ -22,6 +22,7 @@
             <converters:KVPairToDataConverter x:Key="KVPairToDataConverter"/>
 
             <sys:Int32 x:Key="int_0">0</sys:Int32>
+            <sys:Int32 x:Key="int_1">1</sys:Int32>
             <sys:Int32 x:Key="int_59">59</sys:Int32>
 
             <x:Array x:Key="Statuses_List" Type="{x:Type local:KVPair}">

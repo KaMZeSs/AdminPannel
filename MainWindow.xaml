@@ -138,7 +138,7 @@
             </Button>
         </Grid>
 
-        <Grid Name="Orders_Grid" Grid.Row="1" Visibility="Visible">
+        <Grid Name="Orders_Grid" Grid.Row="1" Visibility="Collapsed">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
@@ -424,6 +424,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition />
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -465,11 +466,21 @@
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
 
+                                <TextBlock Grid.Column="0" Text="Стоимость: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding CurrentOrderPrice, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
                                 <TextBlock Grid.Column="0" Text="Дата заказа: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
                                 <TextBox Grid.Column="1" Text="{Binding SelectedItem.order_timestamp, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View, ElementName=Orders_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
                             </Grid>
 
-                            <Grid Grid.Row="4">
+                            <Grid Grid.Row="5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition />
@@ -513,7 +524,7 @@
                                 </Button>
                             </Grid>
 
-                            <Grid Grid.Row="5">
+                            <Grid Grid.Row="6">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition />
@@ -555,10 +566,90 @@
                                     <Image Source="Assets/Cancel.png"/>
                                 </Button>
                             </Grid>
-                            
-                            <!--А тут список с товарами заказа с возможностью изменения их количества и открытия информации о товаре. Прямо в DataGrid А почему и нет?-->
 
                             <Grid Grid.Row="7">
+                                <ListView x:Name="Order_Items_DataGrid" ItemsSource="{Binding CurrentOrderItems}"
+                                          FontSize="16">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock Text="{Binding product_name}" HorizontalAlignment="Stretch"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="Количество: "/>
+                                                    <xctk:IntegerUpDown Value="{Binding changeable_quantity}" Minimum="1" Maximum="10" Width="100">
+                                                        <xctk:IntegerUpDown.Style>
+                                                            <Style TargetType="xctk:IntegerUpDown">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding SelectedItem.status, ElementName=Orders_DataGrid, Mode=OneWay}" Value="canceled">
+                                                                        <Setter Property="IsReadOnly" Value="True"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding SelectedItem.status, ElementName=Orders_DataGrid, Mode=OneWay}" Value="completed">
+                                                                        <Setter Property="IsReadOnly" Value="True"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </xctk:IntegerUpDown.Style>
+                                                    </xctk:IntegerUpDown>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="Стоимость единицы: "/>
+                                                    <TextBlock Text="{Binding price}"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="Общая стоимость: "/>
+                                                    <TextBlock Text="{Binding total_price}"/>
+                                                </StackPanel>
+
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                                                    <Button Content="Обновить количество" Margin="0,5,5,5" Padding="5, 2" Click="Order_Item_Update_Quantity_Button_Click">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding SelectedItem.status, ElementName=Orders_DataGrid, Mode=OneWay}" Value="canceled">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding SelectedItem.status, ElementName=Orders_DataGrid, Mode=OneWay}" Value="completed">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                        <Button.IsEnabled>
+                                                            <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                                                <Binding Path="changeable_quantity"/>
+                                                                <Binding Path="quantity"/>
+                                                            </MultiBinding>
+                                                        </Button.IsEnabled>
+                                                    </Button>
+                                                    <Button Content="Удалить товар" Margin="0,5,5,5" Padding="5, 2" Click="Order_Item_Delete_Button_Click">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding SelectedItem.status, ElementName=Orders_DataGrid, Mode=OneWay}" Value="canceled">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding SelectedItem.status, ElementName=Orders_DataGrid, Mode=OneWay}" Value="completed">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                    <Button Content="О товаре" Margin="0,5,5,5" Padding="5, 2" Click="Order_Item_Info_Button_Click"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="Focusable" Value="False"/>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                </ListView>
+
+                            </Grid>
+
+                            <Grid Grid.Row="8">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition/>
@@ -576,19 +667,15 @@
                                     <TextBlock Grid.Column="0" Text="Уведомление для пользователя: " FontSize="16" Margin="5, 7" TextWrapping="Wrap" Width="130"/>
                                     <TextBox Grid.Column="1" Text="{Binding OrderNotification}" FontSize="16" Margin="5, 7" MaxLength="1000" AcceptsReturn="True" MaxLines="5" TextWrapping="Wrap"/>
                                 </Grid>
+
                                 <Button Grid.Row="2" Style="{StaticResource Button_Style}" 
                                         Click="Order_SendNotification_Button_Click" Content="Отправить уведомление" 
                                         Margin="5" Padding="5" Height="Auto"/>
 
                             </Grid>
-                            
-                            
-
                         </Grid>
                     </Grid>
                 </Border>
-
-                
             </Grid>
         </Grid>
 
@@ -1091,7 +1178,429 @@
             </Border>
         </Grid>
 
-        <Grid Name="SpecialOffers_Grid" Grid.Row="1" Visibility="Collapsed">
+        <Grid Name="SpecialOffers_Grid" Grid.Row="1" Visibility="Visible">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <Menu x:Name="SpecialOffers_Menu" Grid.Row="0">
+                <MenuItem Header="Текущие" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="SpecialOffers_MenuItem_Checked" Unchecked="SpecialOffers_MenuItem_Unchecked" Click="SpecialOffers_MenuItem_Click"/>
+                <MenuItem Header="Запланированные" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="SpecialOffers_MenuItem_Checked" Unchecked="SpecialOffers_MenuItem_Unchecked" Click="SpecialOffers_MenuItem_Click"/>
+                <MenuItem Header="Завершённые" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="SpecialOffers_MenuItem_Checked" Unchecked="SpecialOffers_MenuItem_Unchecked" Click="SpecialOffers_MenuItem_Click"/>
+            </Menu>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="450"/>
+                </Grid.ColumnDefinitions>
+
+                <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Фильтр"/>
+
+                        <Grid Grid.Row="1" Margin="5, 0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0, 5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Номер" FontSize="16" Margin="0, 0, 0, 5"/>
+                                <TextBox Grid.Row="1" FontSize="16" x:Name="SpecilOffers_SO_Id_Filter_TextBox"
+                                         Text="{Binding SpecialOffersFilter.so_id, Converter={StaticResource StringToIntConverter}}"
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+                                <TextBlock Grid.Row="1" Text="Номер"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=SpecilOffers_SO_Id_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Grid.Row="1" Margin="0, 5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Дата заказа" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+
+                                <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
+                                         x:Name="SpecialOffers_DateTime_From_Filter_TextBox"
+                                         Value="{Binding SpecialOffersFilter.datetime_from, Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"/>
+
+                                <TextBlock Grid.Row="1" Text="От"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_From_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_From_Filter_TextBox}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
+
+                                <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
+                                         x:Name="SpecialOffers_DateTime_To_Filter_TextBox"
+                                         Value="{Binding SpecialOffersFilter.datetime_to, Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_59}}"/>
+                                <TextBlock Grid.Row="3" Text="До"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_To_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_To_Filter_TextBox}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Grid.Row="2" Margin="0, 5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Скидка" FontSize="16" Margin="0, 0, 0, 5"/>
+                                <Grid Grid.Row="1" Height="Auto">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <xctk:IntegerUpDown Grid.Column="0" FontSize="16" Name="SpecialOffers_Discount_From_Filter_UpDown"
+                                                        Value="{Binding SpecialOffersFilter.discount_from}" Minimum="0" Maximum="100"/>
+                                    
+                                    <xctk:IntegerUpDown Grid.Column="2" FontSize="16" Name="SpecialOffers_Discount_To_Filter_UpDown"
+                                                        Value="{Binding SpecialOffersFilter.discount_to}" Minimum="0" Maximum="100"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
+                                               IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                               Foreground="LightGray"
+                                               FontSize="16">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Discount_From_Filter_UpDown}" Value="0">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="До"
+                                               IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                               Foreground="LightGray"
+                                               FontSize="16">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Discount_To_Filter_UpDown}" Value="0">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
+                                </Grid>
+                            </Grid>
+
+                            <Grid Grid.Row="3" Margin="0, 5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Товар" FontSize="16" Margin="0, 0, 0, 5"/>
+                                <TextBox Grid.Row="1" FontSize="16" x:Name="SpecialOffers_Product_Filter_TextBox"
+                                         Text="{Binding SpecialOffersFilter.product_id, Converter={StaticResource StringToIntConverter}}"
+                                         TextChanged="TextBoxInt_PreviewTextChanged"/>
+                                <TextBlock Grid.Row="1" Text="Артикул"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Product_Filter_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+
+                                <Button Grid.Column="1" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                    Click="SpecialOffers_Find_Product_Filter_Button_Click" Content="Выбрать" 
+                                    Margin="5, 0, 0, 0" Padding="2"/>
+
+                            </Grid>
+
+                            <Button Grid.Row="5" Style="{StaticResource Button_Style}" 
+                                    Click="SpecialOffersFilter_Button_Click" Content="Поиск" 
+                                    Margin="5" Padding="5" Height="Auto"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid x:Name="SpecialOffers_DataGrid" ItemsSource="{Binding SpecialOffers}"
+                              FontSize="16" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              EnableColumnVirtualization="False"
+                              EnableRowVirtualization="True"
+                              SelectionMode="Single"
+                              SelectionChanged="SpecialOffers_DataGrid_SelectionChanged"
+                              SelectedItem="{Binding SelectedSpecialOffer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding so_id}" IsReadOnly="True" Width="70">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Номер" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                                <DataGridTextColumn.CellStyle>
+                                    <Style BasedOn="{StaticResource DataGridCell_NoBorder_Style}" TargetType="DataGridCell">
+                                        <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.CellStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding start_datetime, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View}" 
+                                    CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="130">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Начало" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding end_datetime, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View}" 
+                                    CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="130">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Окончание" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding discount}" IsReadOnly="True" Width="83">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Скидка, %" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                                <DataGridTextColumn.CellStyle>
+                                    <Style BasedOn="{StaticResource DataGridCell_NoBorder_Style}" TargetType="DataGridCell">
+                                        <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.CellStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding product_id}" IsReadOnly="True" Width="83">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Артикул товара" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTextColumn.Header>
+                                <DataGridTextColumn.CellStyle>
+                                    <Style BasedOn="{StaticResource DataGridCell_NoBorder_Style}" TargetType="DataGridCell">
+                                        <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.CellStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn SortMemberPath="product_name" Width="300">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">
+                                        <Style.Setters>
+                                            <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+                                        </Style.Setters>
+                                    </Style>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding product_name}" TextWrapping="Wrap" Margin="3, 0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="Товар" TextAlignment="Center" TextWrapping="Wrap"/>
+                                </DataGridTemplateColumn.Header>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <GridSplitter Grid.Column="3" BorderThickness="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
+
+                <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Информация об акции"/>
+
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition />
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Номер: " FontSize="16" Margin="5, 7"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.so_id, ElementName=SpecialOffers_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Артикул товара: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.product_id, ElementName=SpecialOffers_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="2" >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Товар: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.product_name, ElementName=SpecialOffers_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="3" >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Исходная цена: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.def_price, ElementName=SpecialOffers_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="4" >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Текущая цена: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.new_price, ElementName=SpecialOffers_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Размер скидки: " FontSize="16" Margin="5, 7"/>
+
+                                <xctk:IntegerUpDown Grid.Column="1" FontSize="16" Value="{Binding SelectedItem.changeable_discount, ElementName=SpecialOffers_DataGrid}" 
+                                                    HorizontalAlignment="Stretch" Minimum="0" Maximum="100" Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                        Click="SpecialOffers_Discount_Confirm_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="SelectedItem.discount" ElementName="SpecialOffers_DataGrid"/>
+                                            <Binding Path="SelectedItem.changeable_discount" ElementName="SpecialOffers_DataGrid"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+
+                                    <Image Source="Assets/Confirm.png"/>
+                                </Button>
+
+                                <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                        Click="SpecialOffers_Discount_Decline_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="SelectedItem.discount" ElementName="SpecialOffers_DataGrid"/>
+                                            <Binding Path="SelectedItem.changeable_discount" ElementName="SpecialOffers_DataGrid"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                    <Image Source="Assets/Cancel.png"/>
+                                </Button>
+                            </Grid>
+                            
+                            <!--Проверить изменение скидки. Добавить изменение дат в зависимости от типа. Тип надо считать? Или наверное нет.-->
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
 
         </Grid>
 
