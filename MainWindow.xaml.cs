@@ -30,7 +30,9 @@ using MoreLinq.Extensions;
 
 using Npgsql;
 
-using Xceed.Wpf.AvalonDock.Themes;
+using System.Diagnostics;
+using MigraDoc.DocumentObjectModel;
+using MigraDoc.Rendering;
 
 namespace AdminPannel
 {
@@ -996,7 +998,6 @@ namespace AdminPannel
             }
         }
 
-
         private ObservableCollection<KeyValuePair<String, String>> statuses = new(StatusConverter.Statuses.ToList());
         public ObservableCollection<KeyValuePair<String, String>> Statuses
         {
@@ -1008,7 +1009,6 @@ namespace AdminPannel
                 OnPropertyChanged(nameof(Statuses));
             }
         }
-
 
         public ObservableCollection<object> _orders_pickup_points = new();
         public ObservableCollection<object> Orders_PickupPoints
@@ -1063,7 +1063,6 @@ namespace AdminPannel
                 OnPropertyChanged(nameof(Selected_Order));
             }
         }
-
         private async void Orders_DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (Orders_PickupPoints is null)
@@ -1394,6 +1393,9 @@ namespace AdminPannel
         {
             if (_selected_order is null)
                 return;
+            if (_order_notification.Trim().Length is not 0)
+                return;
+
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
@@ -1624,6 +1626,170 @@ namespace AdminPannel
             window.ShowDialog();
         }
 
+        private void Order_CreatePDF_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selected_order is null)
+                return;
+
+            var order = _selected_order;
+            var order_items = _current_order_items.ToList();
+
+            var path = CreatePdf(order, order_items);
+            OpenPdfFile(path);
+        }
+
+        private void OpenPdfFile(string filePath)
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo()
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                };
+                var process = Process.Start(psi);
+
+                if (process is null)
+                {
+                    Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog();
+                    saveFileDialog.Filter = "PDF Files (*.pdf)|*.pdf";
+                    bool? result = saveFileDialog.ShowDialog();
+
+                    if (result is not true)
+                        return;
+
+                    if (!File.Exists(filePath))
+                        return;
+
+                    File.Copy(filePath, saveFileDialog.FileName, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Обработка ошибки открытия файла
+                Console.WriteLine($"Ошибка открытия файла: {ex.Message}");
+            }
+        }
+
+        public static String CreatePdf(dynamic order_info, List<dynamic> order_items)
+        {
+            int text_size = 14;
+            int table_size = 12;
+
+            // Создание нового документа PDF
+            var document = new Document();
+            document.Info.Title = $"Заказ №{order_info.order_id}";
+
+            // Создание секции для заголовка
+            var headerSection = document.AddSection();
+
+            var paragraph = headerSection.AddParagraph($"Заказ №{order_info.order_id}");
+            paragraph.Format.Font.Bold = true;
+            paragraph.Format.Alignment = ParagraphAlignment.Center;
+            paragraph.Format.Font.Size = 25;
+
+            headerSection.AddParagraph().Format.SpaceAfter = 10;
+
+            paragraph = headerSection.AddParagraph($"Telegram идентификатор пользователя: {order_info.telegram_id}");
+            paragraph.Format.Font.Size = text_size;
+            paragraph.Format.SpaceAfter = 2;
+            
+            paragraph = headerSection.AddParagraph($"Дата заказа: {order_info.order_timestamp}");
+            paragraph.Format.Font.Size = text_size;
+            paragraph.Format.SpaceAfter = 2;
+
+            paragraph = headerSection.AddParagraph($"Адрес пункта выдачи: {order_info.pickup_point_address}");
+            paragraph.Format.Font.Size = text_size;
+            paragraph.Format.SpaceAfter = 2;
+
+            paragraph = headerSection.AddParagraph($"Общая стоимость: {order_info.total_price} р.");
+            paragraph.Format.Font.Size = text_size;
+
+            headerSection.AddParagraph().Format.SpaceAfter = 10;
+
+            // Создание таблицы для товаров
+            var table = headerSection.AddTable();
+            table.Format.Font.Size = table_size;
+            table.Style = "Table";
+            table.Format.Alignment = ParagraphAlignment.Center;
+
+            double width = 17;
+
+            var width_part = width / (3 + 7 + 3 + 3 + 3);
+
+            table.AddColumn(Unit.FromCentimeter(width_part * 3));
+            table.AddColumn(Unit.FromCentimeter(width_part * 7));
+            table.AddColumn(Unit.FromCentimeter(width_part * 3));
+            table.AddColumn(Unit.FromCentimeter(width_part * 3));
+            table.AddColumn(Unit.FromCentimeter(width_part * 3));
+
+            var header_row = table.AddRow();
+            header_row.Format.SpaceAfter = 2;
+            var header_cells = header_row.Cells;
+            header_cells[0].AddParagraph("Артикул");
+            header_cells[1].AddParagraph("Название");
+            header_cells[2].AddParagraph("Единиц");
+            header_cells[3].AddParagraph("Стоимость единицы");
+            header_cells[4].AddParagraph("Общая cтоимость");
+            table.Borders.Width = 1;
+
+            // Заполнение таблицы товарами
+            foreach (var item in order_items)
+            {
+                var row = table.AddRow();
+                var table_cells = row.Cells;
+                if (table_cells is null)
+                    continue;
+
+                MigraDoc.DocumentObjectModel.Paragraph cell = table_cells[0].AddParagraph($"{item.product_id}");
+                cell.Format.SpaceAfter = 2;
+
+                cell = table_cells[1].AddParagraph($"{item.product_name}");
+                cell.Format.SpaceAfter = 2;
+                cell.Format.Alignment = ParagraphAlignment.Justify;
+
+                cell = table_cells[2].AddParagraph($"{item.quantity}");
+                cell.Format.SpaceAfter = 2;
+
+                cell = table_cells[3].AddParagraph($"{item.price} р.");
+                cell.Format.SpaceAfter = 2;
+                
+                cell = table_cells[4].AddParagraph($"{item.total_price} р.");
+                cell.Format.SpaceAfter = 2;
+            }
+
+            headerSection.AddParagraph().Format.SpaceAfter = 20;
+            var info_par = headerSection.AddParagraph("Возврат товаров по гарантии возможен только при наличии данного документа.");
+            info_par.Format.SpaceAfter = 40;
+
+            var signatureTable = headerSection.AddTable();
+            signatureTable.Format.Alignment = ParagraphAlignment.Center;
+            signatureTable.Format.Font.Size = text_size;
+            signatureTable.AddColumn("5.5cm");
+            signatureTable.AddColumn("6cm");
+            signatureTable.AddColumn("5.5cm");
+
+            var sig_row = signatureTable.AddRow();
+            sig_row.Format.SpaceAfter = 15;
+            var cells = sig_row.Cells;
+            cells[0].AddParagraph("Подпись покупателя");
+            cells[2].AddParagraph("Подпись выдающего");
+            cells = signatureTable.AddRow().Cells;
+            cells[0].AddParagraph("_____________________");
+            cells[2].AddParagraph("_____________________");
+
+
+            var pdfRenderer = new PdfDocumentRenderer();
+            pdfRenderer.Document = document;
+            pdfRenderer.RenderDocument();
+
+            // Сохраните массив байтов в временный файл
+            string tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+
+            pdfRenderer.Save(tempFilePath);
+
+            return tempFilePath;
+        }
 
         #endregion
 
@@ -1705,7 +1871,13 @@ namespace AdminPannel
 
                 var special_offers = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
 
-                MoreEnumerable.ForEach(special_offers, x => x.changeable_discount = x.discount);
+                MoreEnumerable.ForEach(special_offers, 
+                    x => 
+                    {
+                        x.changeable_discount = x.discount;
+                        x.changeable_start_datetime = x.start_datetime;
+                        x.changeable_end_datetime = x.end_datetime;
+                    });
 
                 SpecialOffers = new ObservableCollection<object>(special_offers);
             }
@@ -1796,11 +1968,6 @@ namespace AdminPannel
                 OnPropertyChanged(nameof(SelectedSpecialOffer));
             }
         }
-
-        private async void SpecialOffers_DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            
-        }
         
         private void SpecialOffers_Find_Product_Filter_Button_Click(object sender, RoutedEventArgs e)
         {
@@ -1813,7 +1980,7 @@ namespace AdminPannel
             }
         }
 
-        private async Task UpdateCurrentSpecialOfferInfo(int so_id)
+        private async Task UpdateSpecialOfferInfo(int so_id)
         {
             var vs = CreateSpecialOffersSQL(false);
 
@@ -1833,10 +2000,15 @@ namespace AdminPannel
                 var data = await conn.QueryAsExpandoAsync(vs.sql, vs.data);
                 if (data is null)
                     return;
-                special_offer = data.First() as dynamic;
+                special_offer = data.First();
             }
 
             var old = _special_offers.First(x => ((dynamic)x).so_id == so_id);
+
+            special_offer.changeable_discount = special_offer.discount;
+            special_offer.changeable_start_datetime = special_offer.start_datetime;
+            special_offer.changeable_end_datetime = special_offer.end_datetime;
+
 
             var index = _special_offers.IndexOf(old);
             _special_offers[index] = special_offer;
@@ -1861,6 +2033,8 @@ namespace AdminPannel
                     };
 
                     await conn.ExecuteAsync(sql, data);
+
+                    await UpdateSpecialOfferInfo(SelectedSpecialOffer.so_id);
                 }
             }
             catch (Exception)
@@ -1877,6 +2051,89 @@ namespace AdminPannel
             if (SelectedSpecialOffer != null)
                 SelectedSpecialOffer.changeable_discount = SelectedSpecialOffer.discount;
         }
+
+
+
+        private async void SpecialOffers_Start_DateTime_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+
+            if (SelectedSpecialOffer is null)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @"UPDATE special_offers SET discount = @discount WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = SelectedSpecialOffer.so_id,
+                        discount = SelectedSpecialOffer.changeable_discount
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+
+                    await UpdateSpecialOfferInfo(SelectedSpecialOffer.so_id);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+
+        private void SpecialOffers_Start_DateTime_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedSpecialOffer != null)
+                SelectedSpecialOffer.changeable_start_datetime = SelectedSpecialOffer.start_datetime;
+        }
+
+
+        private async void SpecialOffers_End_DateTime_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+
+            if (SelectedSpecialOffer is null)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @"UPDATE special_offers SET discount = @discount WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = SelectedSpecialOffer.so_id,
+                        discount = SelectedSpecialOffer.changeable_discount
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+
+                    await UpdateSpecialOfferInfo(SelectedSpecialOffer.so_id);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+
+        private void SpecialOffers_End_DateTime_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedSpecialOffer != null)
+                SelectedSpecialOffer.changeable_end_datetime = SelectedSpecialOffer.end_datetime;
+        }
+
+
 
         #endregion
     }

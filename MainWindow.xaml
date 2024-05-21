@@ -665,11 +665,25 @@
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0" Text="Уведомление для пользователя: " FontSize="16" Margin="5, 7" TextWrapping="Wrap" Width="130"/>
-                                    <TextBox Grid.Column="1" Text="{Binding OrderNotification}" FontSize="16" Margin="5, 7" MaxLength="1000" AcceptsReturn="True" MaxLines="5" TextWrapping="Wrap"/>
+                                    <TextBox Grid.Column="1" Text="{Binding OrderNotification}" FontSize="16" Margin="5, 7" MaxLength="1000" AcceptsReturn="True" MaxLines="3" TextWrapping="Wrap"/>
                                 </Grid>
 
                                 <Button Grid.Row="2" Style="{StaticResource Button_Style}" 
                                         Click="Order_SendNotification_Button_Click" Content="Отправить уведомление" 
+                                        Margin="5" Padding="5" Height="Auto"/>
+
+                            </Grid>
+
+                            <Grid Grid.Row="9">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <GridSplitter Grid.Row="0" Background="LightGray" Height="1" HorizontalAlignment="Stretch"/>
+
+                                <Button Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                        Click="Order_CreatePDF_Button_Click" Content="Создать чек" 
                                         Margin="5" Padding="5" Height="Auto"/>
 
                             </Grid>
@@ -1417,7 +1431,6 @@
                               EnableColumnVirtualization="False"
                               EnableRowVirtualization="True"
                               SelectionMode="Single"
-                              SelectionChanged="SpecialOffers_DataGrid_SelectionChanged"
                               SelectedItem="{Binding SelectedSpecialOffer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding so_id}" IsReadOnly="True" Width="70">
@@ -1503,6 +1516,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition />
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -1568,7 +1582,7 @@
 
                                 <TextBlock Grid.Column="0" Text="Размер скидки: " FontSize="16" Margin="5, 7"/>
 
-                                <xctk:IntegerUpDown Grid.Column="1" FontSize="16" Value="{Binding SelectedItem.changeable_discount, ElementName=SpecialOffers_DataGrid}" 
+                                <xctk:IntegerUpDown Grid.Column="1" FontSize="16" Value="{Binding SelectedItem.changeable_discount, ElementName=SpecialOffers_DataGrid, UpdateSourceTrigger=PropertyChanged}" 
                                                     HorizontalAlignment="Stretch" Minimum="0" Maximum="100" Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
 
                                 <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
@@ -1594,7 +1608,85 @@
                                     <Image Source="Assets/Cancel.png"/>
                                 </Button>
                             </Grid>
-                            
+
+                            <Grid Grid.Row="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Дата начала: " FontSize="16" Margin="5, 7"/>
+
+                                <xctk:DateTimePicker Grid.Column="1" Format="Custom" FormatString="g" FontSize="16"
+                                                     Value="{Binding SelectedItem.changeable_start_datetime,ElementName=SpecialOffers_DataGrid, 
+                                                                     Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"
+                                                     HorizontalAlignment="Stretch" Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                        Click="SpecialOffers_Start_DateTime_Confirm_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="SelectedItem.start_datetime" ElementName="SpecialOffers_DataGrid"/>
+                                            <Binding Path="SelectedItem.changeable_start_datetime" ElementName="SpecialOffers_DataGrid"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+
+                                    <Image Source="Assets/Confirm.png"/>
+                                </Button>
+
+                                <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                        Click="SpecialOffers_Start_DateTime_Decline_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="SelectedItem.start_datetime" ElementName="SpecialOffers_DataGrid"/>
+                                            <Binding Path="SelectedItem.changeable_start_datetime" ElementName="SpecialOffers_DataGrid"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                    <Image Source="Assets/Cancel.png"/>
+                                </Button>
+                            </Grid>
+
+                            <Grid Grid.Row="7">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Дата конца: " FontSize="16" Margin="5, 7"/>
+
+                                <xctk:DateTimePicker Grid.Column="1" Format="Custom" FormatString="g" FontSize="16"
+                                                     Value="{Binding SelectedItem.changeable_end_datetime,ElementName=SpecialOffers_DataGrid, 
+                                                                     Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"
+                                                     HorizontalAlignment="Stretch" Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                        Click="SpecialOffers_End_DateTime_Confirm_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="SelectedItem.end_datetime" ElementName="SpecialOffers_DataGrid"/>
+                                            <Binding Path="SelectedItem.changeable_end_datetime" ElementName="SpecialOffers_DataGrid"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+
+                                    <Image Source="Assets/Confirm.png"/>
+                                </Button>
+
+                                <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                        Click="SpecialOffers_End_DateTime_Decline_Button_Click">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="SelectedItem.end_datetime" ElementName="SpecialOffers_DataGrid"/>
+                                            <Binding Path="SelectedItem.changeable_end_datetime" ElementName="SpecialOffers_DataGrid"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                    <Image Source="Assets/Cancel.png"/>
+                                </Button>
+                            </Grid>
+
                             <!--Проверить изменение скидки. Добавить изменение дат в зависимости от типа. Тип надо считать? Или наверное нет.-->
                         </Grid>
                     </Grid>
