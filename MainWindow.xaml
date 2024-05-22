@@ -1494,6 +1494,169 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSpecialOfferCreation, UpdateSourceTrigger=PropertyChanged}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="3.5*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0" Margin="0, 5, 5, 5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!--<TextBlock Grid.Column="0" Text="Товар" FontSize="16" Margin="0, 0, 5, 0" VerticalAlignment="Center"/>-->
+                            <TextBox Grid.Column="1" FontSize="16" x:Name="SpecialOffers_Product_New_TextBox"
+                                     Text="{Binding NewSpecialOffer.product_id, Converter={StaticResource StringToIntConverter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     TextChanged="TextBoxInt_PreviewTextChanged"/>
+                            <TextBlock Grid.Column="1" Text="Артикул"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Product_New_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+
+                            <Button Grid.Column="2" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                    Click="SpecialOffers_Find_Product_New_Button_Click" Content="Выбрать" 
+                                    Margin="5, 0, 0, 0" Padding="2"/>
+
+                        </Grid>
+
+                        <Grid Grid.Column="1" Margin="0, 5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+
+                            <xctk:DateTimePicker Grid.Column="0" Format="Custom" FormatString="g" FontSize="16"
+                                                 x:Name="SpecialOffers_DateTime_From_New_TextBox"
+                                                 Value="{Binding NewSpecialOffer.datetime_from, Converter={StaticResource DateTimeSecondsConverter}, 
+                                ConverterParameter={StaticResource int_0}}"/>
+                            <TextBlock Grid.Column="0" Text="От"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_From_New_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_From_New_TextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <xctk:DateTimePicker Grid.Column="2" Format="Custom" FormatString="g" FontSize="16"
+                                                 x:Name="SpecialOffers_DateTime_To_New_TextBox"
+                                                 Value="{Binding NewSpecialOffer.datetime_to, Converter={StaticResource DateTimeSecondsConverter}, 
+                                ConverterParameter={StaticResource int_59}}"/>
+                            <TextBlock Grid.Column="2" Text="До"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_To_New_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_To_New_TextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
+                        </Grid>
+
+                        <Grid Grid.Column="2">
+                            <xctk:IntegerUpDown Grid.Column="1" FontSize="16" x:Name="SpecialOffers_Discount_New_TextBox"
+                                                Value="{Binding NewSpecialOffer.discount, UpdateSourceTrigger=PropertyChanged}" 
+                                                HorizontalAlignment="Stretch" Minimum="0" Maximum="100" 
+                                                Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
+
+                            <TextBlock Grid.Column="0" Text="Скидка, %"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Discount_New_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Discount_New_TextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <Button Grid.Column="3" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                Click="SpecialOffers_Create_New_Button_Click" Content="Создать" 
+                                Margin="5, 5, 5, 5" Padding="2"/>
+                        
+                        <Button Grid.Column="4" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                Click="SpecialOffers_Cancel_Create_New_Button_Click" Content="Отмена" 
+                                Margin="0, 5, 5, 5" Padding="2"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSpecialOfferCreation, UpdateSourceTrigger=PropertyChanged}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+
+                        <Button Grid.Column="2" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                Click="SpecialOffers_Start_Create_New_Button_Click" Content="Создать новую акцию" 
+                                Margin="5, 5, 5, 5" Padding="2"/>
+                    </Grid>
+
                 </Grid>
 
                 <GridSplitter Grid.Column="3" BorderThickness="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
@@ -1583,9 +1746,20 @@
                                 <TextBlock Grid.Column="0" Text="Размер скидки: " FontSize="16" Margin="5, 7"/>
 
                                 <xctk:IntegerUpDown Grid.Column="1" FontSize="16" Value="{Binding SelectedItem.changeable_discount, ElementName=SpecialOffers_DataGrid, UpdateSourceTrigger=PropertyChanged}" 
-                                                    HorizontalAlignment="Stretch" Minimum="0" Maximum="100" Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
+                                                    HorizontalAlignment="Stretch" Minimum="0" Maximum="100" Margin="5, 7, 10, 7" HorizontalContentAlignment="Left" TextAlignment="Left">
+                                    <xctk:IntegerUpDown.Style>
+                                        <Style TargetType="xctk:IntegerUpDown">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Discount_Сhangeability}" Value="False">
+                                                    <Setter Property="IsReadOnly" Value="True"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </xctk:IntegerUpDown.Style>
 
-                                <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                </xctk:IntegerUpDown>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="-5, 0, 2, 0" Height="21" 
                                         Click="SpecialOffers_Discount_Confirm_Button_Click">
                                     <Button.IsEnabled>
                                         <MultiBinding Converter="{StaticResource MultiObjectConverter}">
@@ -1593,6 +1767,15 @@
                                             <Binding Path="SelectedItem.changeable_discount" ElementName="SpecialOffers_DataGrid"/>
                                         </MultiBinding>
                                     </Button.IsEnabled>
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Discount_Сhangeability}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
 
                                     <Image Source="Assets/Confirm.png"/>
                                 </Button>
@@ -1605,6 +1788,15 @@
                                             <Binding Path="SelectedItem.changeable_discount" ElementName="SpecialOffers_DataGrid"/>
                                         </MultiBinding>
                                     </Button.IsEnabled>
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Discount_Сhangeability}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
                                     <Image Source="Assets/Cancel.png"/>
                                 </Button>
                             </Grid>
@@ -1622,9 +1814,20 @@
                                 <xctk:DateTimePicker Grid.Column="1" Format="Custom" FormatString="g" FontSize="16"
                                                      Value="{Binding SelectedItem.changeable_start_datetime,ElementName=SpecialOffers_DataGrid, 
                                                                      Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"
-                                                     HorizontalAlignment="Stretch" Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
+                                                     HorizontalAlignment="Stretch" Margin="5, 7, 10, 7" HorizontalContentAlignment="Left" TextAlignment="Left">
+                                    <xctk:DateTimePicker.Style>
+                                        <Style TargetType="xctk:DateTimePicker">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Start_DateTime_Сhangeability}" Value="False">
+                                                    <Setter Property="IsReadOnly" Value="True"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </xctk:DateTimePicker.Style>
 
-                                <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                </xctk:DateTimePicker>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="-5, 0, 2, 0" Height="21" 
                                         Click="SpecialOffers_Start_DateTime_Confirm_Button_Click">
                                     <Button.IsEnabled>
                                         <MultiBinding Converter="{StaticResource MultiObjectConverter}">
@@ -1632,6 +1835,16 @@
                                             <Binding Path="SelectedItem.changeable_start_datetime" ElementName="SpecialOffers_DataGrid"/>
                                         </MultiBinding>
                                     </Button.IsEnabled>
+
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Start_DateTime_Сhangeability}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
 
                                     <Image Source="Assets/Confirm.png"/>
                                 </Button>
@@ -1644,6 +1857,17 @@
                                             <Binding Path="SelectedItem.changeable_start_datetime" ElementName="SpecialOffers_DataGrid"/>
                                         </MultiBinding>
                                     </Button.IsEnabled>
+
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Start_DateTime_Сhangeability}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+
                                     <Image Source="Assets/Cancel.png"/>
                                 </Button>
                             </Grid>
@@ -1661,9 +1885,21 @@
                                 <xctk:DateTimePicker Grid.Column="1" Format="Custom" FormatString="g" FontSize="16"
                                                      Value="{Binding SelectedItem.changeable_end_datetime,ElementName=SpecialOffers_DataGrid, 
                                                                      Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"
-                                                     HorizontalAlignment="Stretch" Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
+                                                     HorizontalAlignment="Stretch" Margin="5, 7, 10, 7" HorizontalContentAlignment="Left" TextAlignment="Left">
 
-                                <Button Grid.Column="2" BorderThickness="0" Margin="5, 0, 2, 0" Height="21" 
+                                    <xctk:DateTimePicker.Style>
+                                        <Style TargetType="xctk:DateTimePicker">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding End_DateTime_Сhangeability}" Value="False">
+                                                    <Setter Property="IsReadOnly" Value="True"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </xctk:DateTimePicker.Style>
+
+                                </xctk:DateTimePicker>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="-5, 0, 2, 0" Height="21" 
                                         Click="SpecialOffers_End_DateTime_Confirm_Button_Click">
                                     <Button.IsEnabled>
                                         <MultiBinding Converter="{StaticResource MultiObjectConverter}">
@@ -1671,6 +1907,16 @@
                                             <Binding Path="SelectedItem.changeable_end_datetime" ElementName="SpecialOffers_DataGrid"/>
                                         </MultiBinding>
                                     </Button.IsEnabled>
+
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding End_DateTime_Сhangeability}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
 
                                     <Image Source="Assets/Confirm.png"/>
                                 </Button>
@@ -1683,11 +1929,20 @@
                                             <Binding Path="SelectedItem.changeable_end_datetime" ElementName="SpecialOffers_DataGrid"/>
                                         </MultiBinding>
                                     </Button.IsEnabled>
+
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding End_DateTime_Сhangeability}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+
                                     <Image Source="Assets/Cancel.png"/>
                                 </Button>
                             </Grid>
-
-                            <!--Проверить изменение скидки. Добавить изменение дат в зависимости от типа. Тип надо считать? Или наверное нет.-->
                         </Grid>
                     </Grid>
                 </Border>

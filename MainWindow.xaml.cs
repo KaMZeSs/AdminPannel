@@ -1801,8 +1801,35 @@ namespace AdminPannel
             Planned,
             Completed
         }
-
         private SpecialOffersType current_special_offer_type;
+
+        public bool Discount_Сhangeability
+        {
+            get
+            {
+                if (_selected_special_offer is null)
+                    return false;
+                return _selected_special_offer.start_datetime > DateTime.Now;
+            }
+        }
+        public bool Start_DateTime_Сhangeability
+        {
+            get
+            {
+                if (_selected_special_offer is null)
+                    return false;
+                return _selected_special_offer.start_datetime > DateTime.Now;
+            }
+        }
+        public bool End_DateTime_Сhangeability
+        {
+            get
+            {
+                if (_selected_special_offer is null)
+                    return false;
+                return _selected_special_offer.end_datetime > DateTime.Now;
+            }
+        }
 
         private async void SpecialOffers_MenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -1966,6 +1993,10 @@ namespace AdminPannel
             {
                 _selected_special_offer = value;
                 OnPropertyChanged(nameof(SelectedSpecialOffer));
+
+                OnPropertyChanged(nameof(Discount_Сhangeability));
+                OnPropertyChanged(nameof(Start_DateTime_Сhangeability));
+                OnPropertyChanged(nameof(End_DateTime_Сhangeability));
             }
         }
         
@@ -2013,6 +2044,10 @@ namespace AdminPannel
             var index = _special_offers.IndexOf(old);
             _special_offers[index] = special_offer;
             SpecialOffers_DataGrid.SelectedItem = special_offer;
+
+            OnPropertyChanged(nameof(Discount_Сhangeability));
+            OnPropertyChanged(nameof(Start_DateTime_Сhangeability));
+            OnPropertyChanged(nameof(End_DateTime_Сhangeability));
         }
 
         private async void SpecialOffers_Discount_Confirm_Button_Click(object sender, RoutedEventArgs e)
@@ -2052,25 +2087,31 @@ namespace AdminPannel
                 SelectedSpecialOffer.changeable_discount = SelectedSpecialOffer.discount;
         }
 
-
-
         private async void SpecialOffers_Start_DateTime_Confirm_Button_Click(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
-
             if (SelectedSpecialOffer is null)
                 return;
+
+            if (SelectedSpecialOffer.changeable_start_datetime < DateTime.Now)
+            {
+                var result = MessageBox.Show("Указанная дата меньше текущей. Бедет использована текущая дата",
+                    "Дата меньше текущей", MessageBoxButton.OKCancel, MessageBoxImage.Information);
+
+                if (result is not MessageBoxResult.OK)
+                    return;
+            }
 
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
                 {
-                    var sql = @"UPDATE special_offers SET discount = @discount WHERE id = @id";
+                    var dt = SelectedSpecialOffer.changeable_start_datetime < DateTime.Now ? "LOCALTIMESTAMP" : "@start_datetime";
+                    var sql = @$"UPDATE special_offers SET start_datetime = {dt} WHERE id = @id";
 
                     var data = new
                     {
                         id = SelectedSpecialOffer.so_id,
-                        discount = SelectedSpecialOffer.changeable_discount
+                        start_datetime = SelectedSpecialOffer.changeable_start_datetime
                     };
 
                     await conn.ExecuteAsync(sql, data);
@@ -2093,24 +2134,31 @@ namespace AdminPannel
                 SelectedSpecialOffer.changeable_start_datetime = SelectedSpecialOffer.start_datetime;
         }
 
-
         private async void SpecialOffers_End_DateTime_Confirm_Button_Click(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
-
             if (SelectedSpecialOffer is null)
                 return;
+
+            if (SelectedSpecialOffer.changeable_end_datetime < DateTime.Now)
+            {
+                var result = MessageBox.Show("Указанная дата меньше текущей. Бедет использована текущая дата",
+                    "Дата меньше текущей", MessageBoxButton.OKCancel, MessageBoxImage.Information);
+
+                if (result is not MessageBoxResult.OK)
+                    return;
+            }
 
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
                 {
-                    var sql = @"UPDATE special_offers SET discount = @discount WHERE id = @id";
+                    var dt = SelectedSpecialOffer.changeable_end_datetime < DateTime.Now ? "LOCALTIMESTAMP" : "@end_datetime";
+                    var sql = @$"UPDATE special_offers SET end_datetime = {dt} WHERE id = @id";
 
                     var data = new
                     {
                         id = SelectedSpecialOffer.so_id,
-                        discount = SelectedSpecialOffer.changeable_discount
+                        end_datetime = SelectedSpecialOffer.changeable_end_datetime
                     };
 
                     await conn.ExecuteAsync(sql, data);
@@ -2133,7 +2181,181 @@ namespace AdminPannel
                 SelectedSpecialOffer.changeable_end_datetime = SelectedSpecialOffer.end_datetime;
         }
 
+        private dynamic _new_special_offer = new ExpandoObject();
+        public dynamic NewSpecialOffer
+        {
+            get { return _new_special_offer; }
+            set
+            {
+                _new_special_offer = value;
+                OnPropertyChanged(nameof(NewSpecialOffer));
+            }
+        }
 
+        private bool _is_special_offer_creation = false;
+        public bool IsSpecialOfferCreation
+        {
+            get
+            {
+                return _is_special_offer_creation;
+            }
+            set
+            {
+                _is_special_offer_creation = value;
+                OnPropertyChanged(nameof(IsSpecialOfferCreation));
+            }
+        }
+
+        private void SpecialOffers_Find_Product_New_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new SelectProductWindow();
+            var res = window.ShowDialog();
+            if (res == true)
+            {
+                var selected = window.SelectedProduct;
+                NewSpecialOffer.product_id = selected.id;
+            }
+        }
+
+        private void SpecialOffers_Start_Create_New_Button_Click(object sender, RoutedEventArgs e)
+        {
+            NewSpecialOffer = new ExpandoObject();
+            IsSpecialOfferCreation = true;
+        }
+        private void SpecialOffers_Cancel_Create_New_Button_Click(object sender, RoutedEventArgs e)
+        {
+            IsSpecialOfferCreation = false;
+        }
+
+        private async void SpecialOffers_Create_New_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (_new_special_offer is null)
+                return;
+
+            try
+            {
+                if (_new_special_offer.product_id.ToString().Trim().Length is 0)
+                {
+                    MessageBox.Show("Отсутсвует артикул товара",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Отсутсвует артикул товара",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            try
+            {
+                if (_new_special_offer.datetime_from.ToString().Trim().Length is 0)
+                {
+                    MessageBox.Show("Отсутсвует дата начала",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Отсутсвует дата начала",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            try
+            {
+                if (_new_special_offer.datetime_to.ToString().Trim().Length is 0)
+                {
+                    MessageBox.Show("Отсутсвует дата конца",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Отсутсвует дата конца",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            try
+            {
+                if (_new_special_offer.discount.ToString().Trim().Length is 0)
+                {
+                    MessageBox.Show("Отсутсвует размер скидки",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Отсутсвует размер скидки",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (_new_special_offer.datetime_from > _new_special_offer.datetime_to)
+            {
+                MessageBox.Show("Указанная дата начала меньше указанной даты окончания",
+                    "Ошибка дат", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (_new_special_offer.datetime_from < DateTime.Now)
+            {
+                var result = MessageBox.Show("Указанная дата начала меньше текущей. Бедет использована текущая дата",
+                    "Дата меньше текущей", MessageBoxButton.OKCancel, MessageBoxImage.Information);
+
+                if (result is not MessageBoxResult.OK)
+                    return;
+            }
+
+            var dateTime = _new_special_offer.datetime_from < DateTime.Now ? "LOCALTIMESTAMP" : _new_special_offer.datetime_from;
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @$"INSERT INTO special_offers 
+                                 (product_id, start_datetime, end_datetime, discount) 
+                                 VALUES (@product_id, @start_datetime, @end_datetime, @discount)";
+
+                    var data = new
+                    {
+                        product_id = _new_special_offer.product_id,
+                        start_datetime = _new_special_offer.datetime_from,
+                        end_datetime = _new_special_offer.datetime_to,
+                        discount = _new_special_offer.discount
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+                }
+
+                var task = Task.Run(() =>
+                {
+                    MessageBox.Show("Новая акция была успешная создана", "Действие выполнено", MessageBoxButton.OK, MessageBoxImage.Information);
+                });
+
+                IsSpecialOfferCreation = false;
+
+                await UpdateSpecialOffers();
+
+                await task;
+            }
+            catch (PostgresException ex)
+            {
+                MessageBox.Show($"Ошибка при создании акции:\n{ex.MessageText}",
+                    "Ошибка при создании", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при создании данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+
+        }
 
         #endregion
     }
