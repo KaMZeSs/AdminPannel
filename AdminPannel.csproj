@@ -40,4 +40,8 @@
     <Resource Include="Assets\Trash.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controls\" />
+  </ItemGroup>
+
 </Project>

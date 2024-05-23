@@ -18,6 +18,7 @@
             <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
             <converters:DateTimeToStringConverter x:Key="DateTimeToStringConverter"/>
             <converters:StatusConverter x:Key="StatusConverter"/>
+            <converters:PP_StatusConverter x:Key="PP_StatusConverter"/>
             <converters:DateTimeSecondsConverter x:Key="DateTimeSecondsConverter"/>
             <converters:KVPairToDataConverter x:Key="KVPairToDataConverter"/>
 
@@ -26,11 +27,19 @@
             <sys:Int32 x:Key="int_59">59</sys:Int32>
 
             <x:Array x:Key="Statuses_List" Type="{x:Type local:KVPair}">
+                <local:KVPair Key="" Value=""/>
                 <local:KVPair Key="created" Value="Создан"/>
                 <local:KVPair Key="submitted" Value="Подтверждён"/>
                 <local:KVPair Key="ready" Value="Готов к получению"/>
                 <local:KVPair Key="completed" Value="Выдан"/>
                 <local:KVPair Key="canceled" Value="Отменён"/>
+            </x:Array>
+            
+            <x:Array x:Key="PP_Statuses_List" Type="{x:Type local:KVPair}">
+                <local:KVPair Key="" Value=""/>
+                <local:KVPair Key="works" Value="Работает"/>
+                <local:KVPair Key="paused_receiving_orders" Value="Получение заказов приостановлено"/>
+                <local:KVPair Key="stopped" Value="Не работает"/>
             </x:Array>
 
             <!--Window-->

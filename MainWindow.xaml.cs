@@ -33,6 +33,7 @@ using Npgsql;
 using System.Diagnostics;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.Rendering;
+using System.Linq;
 
 namespace AdminPannel
 {
@@ -53,7 +54,8 @@ namespace AdminPannel
             {
                 { this.Products_Grid, this.OnProductSelected },
                 { this.Orders_Grid, this.OnOrdersSelected },
-                { this.SpecialOffers_Grid, this.OnSpecialOffersSelected }
+                { this.SpecialOffers_Grid, this.OnSpecialOffersSelected },
+                { this.PickupPoints_Grid, this.OnPickupPointsSelected }
             };
 
             _new_category = String.Empty;
@@ -93,7 +95,7 @@ namespace AdminPannel
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Акции")).First();
+            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Пункты выдачи")).First();
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
         }
@@ -838,6 +840,42 @@ namespace AdminPannel
 
         #region Orders Grid
 
+        private void PickupPoint_Combobox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (sender is not ComboBox cbox)
+                return;
+            cbox.IsDropDownOpen = true;
+        }
+        private void test_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not ComboBox cbox)
+                return;
+            if (e.OriginalSource is not TextBox tb)
+                return;
+
+            if (cbox.ItemsSource.Cast<dynamic>().Select(x => x.address).Contains(cbox.Text))
+            {
+                cbox.Items.Filter = null;
+                return;
+            }
+
+            cbox.Items.Filter = (obj) =>
+            {
+                var vs = (dynamic)obj;
+                if (vs is null)
+                    return false;
+                if (vs.address is not String str)
+                    return false;
+
+                if (str.ToLower().Contains(tb.Text.ToLower()))
+                {
+                    return true;
+                }
+
+                return false;
+            };
+        }
+
         enum OrdersType
         {
             New,
@@ -1147,7 +1185,8 @@ namespace AdminPannel
                 return;
             }
 
-            Orders_Current_PickupPoint = found.First();
+            PickupPoint_PP_Combobox.SelectedItem = found.First();
+            PickupPoint_PP_Combobox.Text = Selected_Order.pickup_point_address;
 
             Orders_Original_PickupPoint = new
             {
@@ -1170,7 +1209,7 @@ namespace AdminPannel
                     var data = new
                     {
                         pickup_point_id = _orders_current_pickup_point.id,
-                        id = _selected_order.pickup_point_id
+                        id = _selected_order.order_id
                     };
 
                     int rowsAffected = await conn.ExecuteAsync(sql, data);
@@ -2080,7 +2119,6 @@ namespace AdminPannel
                 return;
             }
         }
-
         private void SpecialOffers_Discount_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
             if (SelectedSpecialOffer != null)
@@ -2127,7 +2165,6 @@ namespace AdminPannel
                 return;
             }
         }
-
         private void SpecialOffers_Start_DateTime_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
             if (SelectedSpecialOffer != null)
@@ -2174,7 +2211,6 @@ namespace AdminPannel
                 return;
             }
         }
-
         private void SpecialOffers_End_DateTime_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
             if (SelectedSpecialOffer != null)
@@ -2216,7 +2252,6 @@ namespace AdminPannel
                 NewSpecialOffer.product_id = selected.id;
             }
         }
-
         private void SpecialOffers_Start_Create_New_Button_Click(object sender, RoutedEventArgs e)
         {
             NewSpecialOffer = new ExpandoObject();
@@ -2355,6 +2390,244 @@ namespace AdminPannel
                 return;
             }
 
+        }
+
+        #endregion
+
+        #region PickupPoints
+
+        private IEnumerable<KeyValuePair<String, String>> _pp_statuses = PP_StatusConverter.Statuses.ToList();
+        public IEnumerable<KeyValuePair<String, String>> PPStatuses
+        {
+            get
+            {
+                return _pp_statuses.Skip(1);
+            }
+        }
+
+        private async Task OnPickupPointsSelected()
+        {
+            await UpdatePickupPoints();
+        }
+
+        public ObservableCollection<object> _pickup_points = new();
+        public ObservableCollection<object> PickupPoints
+        {
+            get { return _pickup_points; }
+            set
+            {
+                _pickup_points.Clear();
+                _pickup_points = value;
+                OnPropertyChanged(nameof(PickupPoints));
+            }
+        }
+
+        private async Task UpdatePickupPoints(bool ShouldBeFiltered = false)
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var cmd = this.CreatePickupPointsSQL(ShouldBeFiltered);
+
+                    var pickup_points = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
+
+                    MoreEnumerable.ForEach(pickup_points,
+                        x =>
+                        {
+                            x.changeable_address = x.address;
+                        });
+
+                    PickupPoints = new ObservableCollection<object>(pickup_points);
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            if (PickupPoints.Any())
+                this.PickupPoints_DataGrid.SelectedItem = PickupPoints.First();
+        }
+
+        private (String sql, object? data) CreatePickupPointsSQL(bool ShouldBeFiltered = false)
+        {
+            var filter_string = String.Empty;
+
+            if (ShouldBeFiltered && PickupPointsFilter is not null)
+            {
+                var expandoDict = (IDictionary<string, object>)PickupPointsFilter;
+                var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);
+
+                foreach (var kvp in filter)
+                {
+                    filter_string += kvp.Key switch
+                    {
+                        "address" => " AND lower(address) LIKE lower(@address)",
+                        "status" => " AND status = @status",
+                        _ => ""
+                    };
+                }
+            }
+
+            var sql =
+                        @$"
+                        SELECT 
+                            id,
+                            address,
+                            summary,
+                            is_works,
+                            is_receiving_orders,
+                            status
+                        FROM pickup_points_view pp
+                        WHERE {filter_string}
+                        ORDER BY pp.id DESC";
+
+            sql = sql.Replace("WHERE \r\n                        ", "");
+            sql = sql.Replace("WHERE  AND", "WHERE");
+
+            return (sql, _pickup_points_filter);
+        }
+
+        private async void PickupPointsFilter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdatePickupPoints(ShouldBeFiltered: true);
+        }
+
+        private dynamic _pickup_points_filter = new ExpandoObject();
+        public dynamic PickupPointsFilter
+        {
+            get { return _pickup_points_filter; }
+            set
+            {
+                _pickup_points_filter = value;
+                OnPropertyChanged(nameof(PickupPointsFilter));
+            }
+        }
+
+        private dynamic? _selected_pickup_point;
+        public dynamic? SelectedPickupPoint
+        {
+            get { return _selected_pickup_point; }
+            set
+            {
+                _selected_pickup_point = value;
+                OnPropertyChanged(nameof(SelectedPickupPoint));
+            }
+        }
+
+        private void PickupPoints_DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (SelectedPickupPoint is null)
+                return;
+
+            var status = SelectedPickupPoint.status;
+            var found_status = PPStatuses.Where(x => x.Key.Equals(status)).ToList();
+            if (found_status.Count == 0)
+                return;
+
+            PickupPoints_Current_Status = found_status.First();
+
+            PickupPoints_Original_Status = new
+            {
+                Key = SelectedPickupPoint.status
+            };
+        }
+
+        private async void PickupPoints_Address_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedPickupPoint is null)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @"UPDATE pickup_points SET address = @address WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = SelectedPickupPoint.id,
+                        address = SelectedPickupPoint.changeable_address
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+
+                    SelectedPickupPoint.address = SelectedPickupPoint.changeable_address;
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+        private void PickupPoints_Address_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedPickupPoint != null)
+                SelectedPickupPoint.changeable_address = SelectedPickupPoint.address;
+        }
+
+        private dynamic? _pickup_points_current_status;
+        public dynamic? PickupPoints_Current_Status
+        {
+            get { return _pickup_points_current_status; }
+            set
+            {
+                _pickup_points_current_status = value;
+                OnPropertyChanged(nameof(PickupPoints_Current_Status));
+            }
+        }
+
+        private dynamic? _pickup_point_original_status;
+        public dynamic? PickupPoints_Original_Status
+        {
+            get { return _pickup_point_original_status; }
+            set
+            {
+                _pickup_point_original_status = value;
+                OnPropertyChanged(nameof(PickupPoints_Original_Status));
+            }
+        }
+
+        private async void PickupPoints_Status_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+
+            if (SelectedPickupPoint is null)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @"UPDATE pickup_points SET address = @address WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = SelectedPickupPoint.id,
+                        address = SelectedPickupPoint.changeable_address
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+
+                    SelectedPickupPoint.address = SelectedPickupPoint.changeable_address;
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+        private void PickupPoints_Status_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+            if (SelectedPickupPoint != null)
+                SelectedPickupPoint.changeable_address = SelectedPickupPoint.address;
         }
 
         #endregion

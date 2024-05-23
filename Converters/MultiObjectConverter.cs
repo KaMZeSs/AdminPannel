@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
 
 namespace AdminPannel.Converters
@@ -17,7 +19,19 @@ namespace AdminPannel.Converters
                 object value1 = values[0];
                 object value2 = values[1];
 
-                // Проверяем, что оба значения не равны
+                if (parameter?.Equals("NotUnset") ?? false)
+                {
+                    if (value1.Equals(DependencyProperty.UnsetValue))
+                    {
+                        return false;
+                    }
+                    if (value2.Equals(DependencyProperty.UnsetValue))
+                    {
+                        return false;
+                    }
+                }
+                
+ 
                 return !Equals(value1, value2);
             }
             return false;
