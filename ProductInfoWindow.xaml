@@ -245,7 +245,7 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" Text="Описание: " FontSize="16" Margin="5, 7"/>
-                <TextBox Grid.Column="1" TextWrapping="Wrap" FontSize="16" Margin="5, 7, 0, 7"
+                <TextBox Grid.Column="1" TextWrapping="Wrap" FontSize="16" Margin="5, 7, 0, 7" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
                          Text="{Binding ProductInfo.description, UpdateSourceTrigger=PropertyChanged}"
                          MaxLength="1000"/>
 

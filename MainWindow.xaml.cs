@@ -988,7 +988,7 @@ namespace AdminPannel
             var sql_status = current_orders_type switch
             {
                 OrdersType.New => "= 'created'",
-                OrdersType.Current => "NOT IN ('completed', 'canceled')",
+                OrdersType.Current => "NOT IN ('created', 'completed', 'canceled')",
                 OrdersType.Completed => "IN ('completed', 'canceled')",
                 _ => "= 'created'",
             };
@@ -1393,7 +1393,7 @@ namespace AdminPannel
             }
         }
 
-        private async void Order_SendReadyNotification(int order_id)
+        private async Task Order_SendReadyNotification(int order_id)
         {
             try
             {
@@ -2036,6 +2036,9 @@ namespace AdminPannel
                 OnPropertyChanged(nameof(Discount_Сhangeability));
                 OnPropertyChanged(nameof(Start_DateTime_Сhangeability));
                 OnPropertyChanged(nameof(End_DateTime_Сhangeability));
+                
+                OnPropertyChanged(nameof(CancelButtonContent));
+                OnPropertyChanged(nameof(CancelButtonVisibility));
             }
         }
         
@@ -2392,6 +2395,100 @@ namespace AdminPannel
 
         }
 
+        public String CancelButtonContent
+        {
+            get
+            {
+                if (_selected_special_offer is null)
+                    return String.Empty;
+                if (_selected_special_offer.start_datetime > DateTime.Now)
+                    return "Отменить акцию";
+                if (_selected_special_offer.end_datetime > DateTime.Now)
+                    return "Завершить акцию";
+                return String.Empty;
+            }
+        }
+
+        public Visibility CancelButtonVisibility
+        {
+            get
+            {
+                if (_selected_special_offer is null)
+                    return Visibility.Collapsed;
+                if (_selected_special_offer.start_datetime > DateTime.Now)
+                    return Visibility.Visible;
+                if (_selected_special_offer.end_datetime > DateTime.Now)
+                    return Visibility.Visible;
+                return Visibility.Collapsed;
+            }
+        }
+
+        private async void SpecialOffers_Cancel_Offer_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedSpecialOffer is null)
+                return;
+
+            String question;
+            if (CancelButtonContent.StartsWith("Отменить"))
+            {
+                question = "Вы точно уверены, что хотите отменить запланированную акцию? Запланированная акция будет удалена без возможности восстановления";
+            }
+            else
+            {
+                question = "Вы точно уверены, что хотите завершить текущую акцию? Акция будет прервана без возможности возобновления";
+            }
+
+            var result = MessageBox.Show(question, "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information);
+
+            if (result is not MessageBoxResult.OK)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @$"SELECT * FROM cancel_special_offer(@offer_id)";
+
+                    var data = new
+                    {
+                        offer_id = SelectedSpecialOffer.so_id
+                    };
+
+                    var q_result = await conn.QueryFirstAsync<String>(sql, data);
+
+                    if (q_result.Equals("Ended early"))
+                    {
+                        await UpdateSpecialOfferInfo(SelectedSpecialOffer.so_id);
+                        MessageBox.Show("Акция успешно завершена. Данные обновлен", "Успешное выполнение", MessageBoxButton.OK, MessageBoxImage.Information); 
+                    }
+                    else if (q_result.Equals("Canceled"))
+                    {
+                        var to_delete = _special_offers.First(x => ((dynamic)x).so_id == SelectedSpecialOffer.so_id);
+                        SpecialOffers.Remove(to_delete);
+                        MessageBox.Show("Акция успешно отменена. Данные обновлен", "Успешное выполнение", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else if (q_result.Equals("Cannot cancel"))
+                    {
+                        await UpdateSpecialOfferInfo(SelectedSpecialOffer.so_id);
+                        MessageBox.Show("Акция не может быть отменена. Данные обновлены", "Ошибка выполнения", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else if (q_result.Equals("Not found"))
+                    {
+                        var to_delete = _special_offers.First(x => ((dynamic)x).so_id == SelectedSpecialOffer.so_id);
+                        SpecialOffers.Remove(to_delete);
+                        MessageBox.Show("Акция не найдена. Данные обновлены", "Ошибка выполнения", MessageBoxButton.OK, MessageBoxImage.Error);
+                    } 
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+
         #endregion
 
         #region PickupPoints
@@ -2421,7 +2518,6 @@ namespace AdminPannel
                 OnPropertyChanged(nameof(PickupPoints));
             }
         }
-
         private async Task UpdatePickupPoints(bool ShouldBeFiltered = false)
         {
             try
@@ -2436,6 +2532,7 @@ namespace AdminPannel
                         x =>
                         {
                             x.changeable_address = x.address;
+                            x.changeable_summary = x.summary;
                         });
 
                     PickupPoints = new ObservableCollection<object>(pickup_points);
@@ -2480,7 +2577,7 @@ namespace AdminPannel
                             status
                         FROM pickup_points_view pp
                         WHERE {filter_string}
-                        ORDER BY pp.id DESC";
+                        ORDER BY pp.id ASC";
 
             sql = sql.Replace("WHERE \r\n                        ", "");
             sql = sql.Replace("WHERE  AND", "WHERE");
@@ -2555,6 +2652,15 @@ namespace AdminPannel
                     SelectedPickupPoint.address = SelectedPickupPoint.changeable_address;
                 }
             }
+            catch (PostgresException ex)
+            {
+                if (ex.MessageText.Contains("pickup_points_address_key"))
+                {
+                    MessageBox.Show($"Пункт выдачи с данным адресом уже существует",
+                        "Повторение данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                return;
+            }
             catch (Exception)
             {
                 MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
@@ -2593,27 +2699,51 @@ namespace AdminPannel
 
         private async void PickupPoints_Status_Confirm_Button_Click(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
-
-            if (SelectedPickupPoint is null)
+            if (PickupPoints_Current_Status is null || SelectedPickupPoint is null)
                 return;
 
             try
             {
                 await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
                 {
-                    var sql = @"UPDATE pickup_points SET address = @address WHERE id = @id";
+                    var sql = @"UPDATE pickup_points SET ";
+
+                    sql += PickupPoints_Current_Status.Key switch
+                    {
+                        "works" => "is_works = True, is_receiving_orders = True",
+                        "paused_receiving_orders" => "is_works = True, is_receiving_orders = False",
+                        "stopped" => "is_works = False, is_receiving_orders = False",
+                        _ => ""
+                    };
+
+                    if (sql.EndsWith("SET "))
+                        return;
+
+
+                    sql += " WHERE id = @id";
 
                     var data = new
                     {
-                        id = SelectedPickupPoint.id,
-                        address = SelectedPickupPoint.changeable_address
+                        id = SelectedPickupPoint.id
                     };
 
                     await conn.ExecuteAsync(sql, data);
 
-                    SelectedPickupPoint.address = SelectedPickupPoint.changeable_address;
+                    SelectedPickupPoint.status = PickupPoints_Current_Status.Key;
+                    PickupPoints_Original_Status = new
+                    {
+                        Key = PickupPoints_Current_Status.Key
+                    };
                 }
+            }
+            catch (PostgresException ex)
+            {
+                if (ex.MessageText.Contains("active orders"))
+                {
+                    MessageBox.Show("Невозможно отключить пункт выдачи, в который направлены активные заказы",
+                        "Есть активные заказы", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                
             }
             catch (Exception)
             {
@@ -2625,10 +2755,207 @@ namespace AdminPannel
         }
         private void PickupPoints_Status_Decline_Button_Click(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
-            if (SelectedPickupPoint != null)
-                SelectedPickupPoint.changeable_address = SelectedPickupPoint.address;
+            if (PickupPoints_Current_Status is null || PickupPoints_Original_Status is null)
+                return;
+
+            PickupPoints_Current_Status = PPStatuses.First(x => x.Key.Equals(PickupPoints_Original_Status.Key));
         }
+
+        private async void PickupPoints_Summary_Confirm_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedPickupPoint is null)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @"UPDATE pickup_points SET summary = @summary WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = SelectedPickupPoint.id,
+                        summary = SelectedPickupPoint.changeable_summary
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+
+                    SelectedPickupPoint.summary = SelectedPickupPoint.changeable_summary;
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при изменении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+        private void PickupPoints_Summary_Decline_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedPickupPoint != null)
+                SelectedPickupPoint.changeable_summary = SelectedPickupPoint.summary;
+        }
+
+        private dynamic _new_pickup_point = new ExpandoObject();
+        public dynamic NewPickupPoint
+        {
+            get { return _new_pickup_point; }
+            set
+            {
+                _new_pickup_point = value;
+                OnPropertyChanged(nameof(NewPickupPoint));
+            }
+        }
+
+        private bool _is_pickup_point_creation = false;
+        public bool IsPickupPointCreation
+        {
+            get
+            {
+                return _is_pickup_point_creation;
+            }
+            set
+            {
+                _is_pickup_point_creation = value;
+                OnPropertyChanged(nameof(IsPickupPointCreation));
+            }
+        }
+
+        private void PickupPoints_Start_Create_New_Button_Click(object sender, RoutedEventArgs e)
+        {
+            NewPickupPoint = new ExpandoObject();
+            IsPickupPointCreation = true;
+        }
+        private void PickupPoints_Cancel_Create_New_Button_Click(object sender, RoutedEventArgs e)
+        {
+            IsPickupPointCreation = false;
+        }
+
+        private async void PickupPoints_Create_New_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (_new_pickup_point is null)
+                return;
+            if (_pickup_points is null)
+                return;
+
+            try
+            {
+                if (_new_pickup_point.address.ToString().Trim().Length is 0)
+                {
+                    MessageBox.Show("Отсутсвует адрес пункта выдачи",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Отсутсвует адрес пункта выдачи",
+                        "Недостаток данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (_pickup_points.Count(x => ((dynamic)x).address.Equals(_new_pickup_point.address)) is not 0)
+            {
+                MessageBox.Show("Пункт выдачи с данным адресом уже существует",
+                        "Повторение данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @$"INSERT INTO pickup_points 
+                                 (address) 
+                                 VALUES (@address)";
+
+                    var data = new
+                    {
+                        address = _new_pickup_point.address
+                    };
+
+                    await conn.ExecuteAsync(sql, data);
+                }
+
+                var task = Task.Run(() =>
+                {
+                    MessageBox.Show("Новый пунтк выдачи был успешно создан", "Действие выполнено", MessageBoxButton.OK, MessageBoxImage.Information);
+                });
+
+                IsPickupPointCreation = false;
+
+                await UpdatePickupPoints();
+
+                await task;
+            }
+            catch (PostgresException ex)
+            {
+                if (ex.MessageText.Contains("pickup_points_address_key"))
+                {
+                    MessageBox.Show($"Пункт выдачи с данным адресом уже существует",
+                        "Повторение данных", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    MessageBox.Show($"Ошибка при создании пункта выдачи:\n{ex.MessageText}",
+                        "Ошибка при создании", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                
+
+                return;
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при создании данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+
+        }
+
+        private async void DeleteSelectedPickupPoints_Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selected_pickup_point is null)
+                return;
+
+            if (MessageBox.Show($"Вы точно уверены, что хотите удалить пункт выдачи по адресу: {_selected_pickup_point.address}?",
+                                "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning) is not MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "DELETE FROM pickup_Points WHERE id = @id";
+
+                    var data = new
+                    {
+                        id = _selected_pickup_point.id
+                    };
+
+                    int rowsAffected = await conn.ExecuteAsync(sql, data);
+
+                    PickupPoints.Remove(_selected_pickup_point);
+                }
+            }
+            catch (Exception)
+            {
+
+                MessageBox.Show($"Невозможно удалить пункт выдачи, к которому привязаны заказы",
+                    $"Ошибка удаления пункта выдачи", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        #endregion
+
+        #region News
+
+
+
 
         #endregion
     }

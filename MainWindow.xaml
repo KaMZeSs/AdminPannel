@@ -1726,7 +1726,6 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition />
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <Grid Grid.Row="0">
@@ -1825,7 +1824,7 @@
                                     </Button>
 
                                     <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
-                    Click="SpecialOffers_Discount_Decline_Button_Click">
+                                            Click="SpecialOffers_Discount_Decline_Button_Click">
                                         <Button.IsEnabled>
                                             <MultiBinding Converter="{StaticResource MultiObjectConverter}">
                                                 <Binding Path="SelectedItem.discount" ElementName="SpecialOffers_DataGrid"/>
@@ -1987,6 +1986,10 @@
                                         <Image Source="Assets/Cancel.png"/>
                                     </Button>
                                 </Grid>
+
+                                <Button Grid.Row="9" Style="{StaticResource Button_Style}" 
+                                        Click="SpecialOffers_Cancel_Offer_Button_Click" Content="{Binding CancelButtonContent}" 
+                                        Margin="5,5,5,4" Padding="2" Height="27" Visibility="{Binding CancelButtonVisibility}"/>
                             </Grid>
                         </Grid>
                         <Grid>
@@ -2092,7 +2095,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <DataGrid x:Name="PickupPoints_DataGrid" ItemsSource="{Binding PickupPoints}"
+                <DataGrid x:Name="PickupPoints_DataGrid" ItemsSource="{Binding PickupPoints, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                           FontSize="16" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                           VirtualizingPanel.IsVirtualizing="True"
                           VirtualizingPanel.VirtualizationMode="Recycling"
@@ -2119,184 +2122,129 @@
                                 <TextBlock Text="Адрес" TextAlignment="Center" TextWrapping="Wrap"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Binding="{Binding status, Converter={StaticResource PP_StatusConverter}}" 
-                                            CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="130">
-                            <DataGridTextColumn.Header>
+                        <DataGridTemplateColumn SortMemberPath="status" Width="200">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">
+                                    <Style.Setters>
+                                        <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                                    </Style.Setters>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding status, Converter={StaticResource PP_StatusConverter}}" TextWrapping="Wrap" Margin="3, 0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.Header>
                                 <TextBlock Text="Статус" TextAlignment="Center" TextWrapping="Wrap"/>
-                            </DataGridTextColumn.Header>
-                        </DataGridTextColumn>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <!--<Grid Grid.Row="1">
-                    <Grid.Style>
-                        <Style TargetType="Grid">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsSpecialOfferCreation, UpdateSourceTrigger=PropertyChanged}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
-
+                <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="180"/>
-                        <ColumnDefinition Width="3.5*"/>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="5"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <Grid Grid.Column="0" Margin="0, 5, 5, 5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        --><!--<TextBlock Grid.Column="0" Text="Товар" FontSize="16" Margin="0, 0, 5, 0" VerticalAlignment="Center"/>--><!--
-                        <TextBox Grid.Column="1" FontSize="16" x:Name="SpecialOffers_Product_New_TextBox"
-         Text="{Binding NewSpecialOffer.product_id, Converter={StaticResource StringToIntConverter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-         TextChanged="TextBoxInt_PreviewTextChanged"/>
-                        <TextBlock Grid.Column="1" Text="Артикул"
-           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
-           Foreground="LightGray"
-           FontSize="16">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Product_New_TextBox}" Value="0">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-
-
-                        <Button Grid.Column="2" Grid.Row="1" Style="{StaticResource Button_Style}" 
-        Click="SpecialOffers_Find_Product_New_Button_Click" Content="Выбрать" 
-        Margin="5, 0, 0, 0" Padding="2"/>
-
-                    </Grid>
-
-                    <Grid Grid.Column="1" Margin="0, 5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-
-                        <xctk:DateTimePicker Grid.Column="0" Format="Custom" FormatString="g" FontSize="16"
-                     x:Name="SpecialOffers_DateTime_From_New_TextBox"
-                     Value="{Binding NewSpecialOffer.datetime_from, Converter={StaticResource DateTimeSecondsConverter}, 
-    ConverterParameter={StaticResource int_0}}"/>
-                        <TextBlock Grid.Column="0" Text="От"
-           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
-           Foreground="LightGray"
-           FontSize="16">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_From_New_TextBox}" Value="0">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_From_New_TextBox}" Value="{x:Null}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-
-                        <xctk:DateTimePicker Grid.Column="2" Format="Custom" FormatString="g" FontSize="16"
-                     x:Name="SpecialOffers_DateTime_To_New_TextBox"
-                     Value="{Binding NewSpecialOffer.datetime_to, Converter={StaticResource DateTimeSecondsConverter}, 
-    ConverterParameter={StaticResource int_59}}"/>
-                        <TextBlock Grid.Column="2" Text="До"
-           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
-           Foreground="LightGray"
-           FontSize="16">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_To_New_TextBox}" Value="0">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_DateTime_To_New_TextBox}" Value="{x:Null}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-
-                        <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
-                    </Grid>
-
-                    <Grid Grid.Column="2">
-                        <xctk:IntegerUpDown Grid.Column="1" FontSize="16" x:Name="SpecialOffers_Discount_New_TextBox"
-                    Value="{Binding NewSpecialOffer.discount, UpdateSourceTrigger=PropertyChanged}" 
-                    HorizontalAlignment="Stretch" Minimum="0" Maximum="100" 
-                    Margin="5, 7, 0, 7" HorizontalContentAlignment="Left" TextAlignment="Left"/>
-
-                        <TextBlock Grid.Column="0" Text="Скидка, %"
-           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
-           Foreground="LightGray"
-           FontSize="16">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Discount_New_TextBox}" Value="0">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Text.Length, ElementName=SpecialOffers_Discount_New_TextBox}" Value="{x:Null}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
-
-                    <Button Grid.Column="3" Grid.Row="1" Style="{StaticResource Button_Style}" 
-    Click="SpecialOffers_Create_New_Button_Click" Content="Создать" 
-    Margin="5, 5, 5, 5" Padding="2"/>
-
-                    <Button Grid.Column="4" Grid.Row="1" Style="{StaticResource Button_Style}" 
-    Click="SpecialOffers_Cancel_Create_New_Button_Click" Content="Отмена" 
-    Margin="0, 5, 5, 5" Padding="2"/>
-                </Grid>
-
-                <Grid Grid.Row="1">
-                    <Grid.Style>
-                        <Style TargetType="Grid">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsSpecialOfferCreation, UpdateSourceTrigger=PropertyChanged}" Value="False">
+                    <Grid Grid.Column="0">
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
                                     <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPickupPointCreation, UpdateSourceTrigger=PropertyChanged}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
 
-                    <Button Grid.Column="2" Grid.Row="1" Style="{StaticResource Button_Style}" 
-    Click="SpecialOffers_Start_Create_New_Button_Click" Content="Создать новую акцию" 
-    Margin="5, 5, 5, 5" Padding="2"/>
-                </Grid>-->
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="120"/>
+                            </Grid.ColumnDefinitions>
 
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Адрес: " FontSize="16" Margin="5, 7"/>
+                                <TextBox Grid.Column="1" x:Name="PickupPoint_New_Address_TextBox"
+                                         Text="{Binding NewPickupPoint.address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="16" Margin="5, 7, 10, 7"/>
+
+                                <TextBlock Grid.Column="1" Text="Адрес"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="10,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=PickupPoint_New_Address_TextBox}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+
+                            <Button Grid.Column="1" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                    Click="PickupPoints_Create_New_Button_Click" Content="Создать" 
+                                    Margin="5, 5, 5, 5" Padding="2"/>
+
+                            <Button Grid.Column="2" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                    Click="PickupPoints_Cancel_Create_New_Button_Click" Content="Отмена" 
+                                    Margin="0, 5, 5, 5" Padding="2"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPickupPointCreation, UpdateSourceTrigger=PropertyChanged}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <Button Grid.Column="2" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                    Click="PickupPoints_Start_Create_New_Button_Click" Content="Создать новый пункт выдачи" 
+                                    Margin="5, 5, 5, 5" Padding="2"/>
+                        </Grid>
+                    </Grid>
+
+                    <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
+
+                    <Button Grid.Column="2" Margin="5" Padding="5" Width="200" Content="Удалить выбранный пункт"
+                            Click="DeleteSelectedPickupPoints_Button_Click">
+                        <Button.Style>
+                            <Style BasedOn="{StaticResource Button_Style}" TargetType="Button">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=PickupPoints_DataGrid}" Value="0">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
             </Grid>
 
             <GridSplitter Grid.Column="3" BorderThickness="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
 
             <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="4">
                 <Grid>
-                    <Grid Visibility="Visible">
+                    <Grid>
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Setter Property="Visibility" Value="Visible"/>
@@ -2317,12 +2265,6 @@
 
                         <Grid Grid.Row="1">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition />
@@ -2400,6 +2342,41 @@
                                         <MultiBinding Converter="{StaticResource MultiObjectConverter}">
                                             <Binding Path="PickupPoints_Current_Status.Key"/>
                                             <Binding Path="PickupPoints_Original_Status.Key"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                    <Image Source="Assets/Cancel.png"/>
+                                </Button>
+                            </Grid>
+
+                            <Grid Grid.Row="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Описание: " FontSize="16" Margin="5, 7"/>
+                                <TextBox Grid.Column="1" TextWrapping="Wrap" MaxLength="1000" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                         Text="{Binding SelectedItem.changeable_summary, ElementName=PickupPoints_DataGrid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                         FontSize="16" Margin="5, 7, 10, 7"/>
+
+                                <Button Grid.Column="2" BorderThickness="0" Margin="-5, 0, 2, 0" Height="21" 
+                                        Click="PickupPoints_Summary_Confirm_Button_Click" VerticalAlignment="Top">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="SelectedItem.summary" ElementName="PickupPoints_DataGrid"/>
+                                            <Binding Path="SelectedItem.changeable_summary" ElementName="PickupPoints_DataGrid"/>
+                                        </MultiBinding>
+                                    </Button.IsEnabled>
+                                    <Image Source="Assets/Confirm.png"/>
+                                </Button>
+                                <Button Grid.Column="3" BorderThickness="0" Margin="0, 0, 5, 0" Height="21"
+                                        Click="PickupPoints_Summary_Decline_Button_Click" VerticalAlignment="Top">
+                                    <Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource MultiObjectConverter}">
+                                            <Binding Path="SelectedItem.summary" ElementName="PickupPoints_DataGrid"/>
+                                            <Binding Path="SelectedItem.changeable_summary" ElementName="PickupPoints_DataGrid"/>
                                         </MultiBinding>
                                     </Button.IsEnabled>
                                     <Image Source="Assets/Cancel.png"/>
