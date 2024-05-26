@@ -278,18 +278,17 @@
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <Grid Grid.Column="0" >
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    
+
                     <TextBlock Text="Изображения: " FontSize="16" Margin="5, 7"/>
 
                 </Grid>
-                
 
                 <Grid Grid.Column="1">
 

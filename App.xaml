@@ -21,6 +21,7 @@
             <converters:PP_StatusConverter x:Key="PP_StatusConverter"/>
             <converters:DateTimeSecondsConverter x:Key="DateTimeSecondsConverter"/>
             <converters:KVPairToDataConverter x:Key="KVPairToDataConverter"/>
+            <converters:BoolToNotifiedConverter x:Key="BoolToNotifiedConverter"/>
 
             <sys:Int32 x:Key="int_0">0</sys:Int32>
             <sys:Int32 x:Key="int_1">1</sys:Int32>

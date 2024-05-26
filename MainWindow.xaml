@@ -130,6 +130,10 @@
                 <MenuItem Header="Акции" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
                 <MenuItem Header="Пункты выдачи" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
                 <MenuItem Header="Новости" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
+                <MenuItem Header="Статистика" Style="{StaticResource MenuItem_Style}" IsCheckable="False">
+                    <MenuItem Header="Продажи за месяц" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
+                    <MenuItem Header="Использование пунктов выдачи" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
+                </MenuItem>
             </Menu>
 
             <Button x:Name="Refresh_Button" Grid.Column="2"
@@ -1299,7 +1303,7 @@
                                     <RowDefinition/>
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Text="Дата заказа" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+                                <TextBlock Text="Дата проведения" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
 
                                 <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
                                          x:Name="SpecialOffers_DateTime_From_Filter_TextBox"
@@ -1365,7 +1369,7 @@
 
                                     <xctk:IntegerUpDown Grid.Column="0" FontSize="16" Name="SpecialOffers_Discount_From_Filter_UpDown"
                                                         Value="{Binding SpecialOffersFilter.discount_from}" Minimum="0" Maximum="100"/>
-                                    
+
                                     <xctk:IntegerUpDown Grid.Column="2" FontSize="16" Name="SpecialOffers_Discount_To_Filter_UpDown"
                                                         Value="{Binding SpecialOffersFilter.discount_to}" Minimum="0" Maximum="100"/>
 
@@ -1539,7 +1543,7 @@
                                 </Style.Triggers>
                             </Style>
                         </Grid.Style>
-                        
+
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="180"/>
                             <ColumnDefinition Width="3.5*"/>
@@ -1667,7 +1671,7 @@
                         <Button Grid.Column="3" Grid.Row="1" Style="{StaticResource Button_Style}" 
                                 Click="SpecialOffers_Create_New_Button_Click" Content="Создать" 
                                 Margin="5, 5, 5, 5" Padding="2"/>
-                        
+
                         <Button Grid.Column="4" Grid.Row="1" Style="{StaticResource Button_Style}" 
                                 Click="SpecialOffers_Cancel_Create_New_Button_Click" Content="Отмена" 
                                 Margin="0, 5, 5, 5" Padding="2"/>
@@ -2008,10 +2012,9 @@
                     </Grid>
                 </Border>
             </Grid>
-
         </Grid>
 
-        <Grid Name="PickupPoints_Grid" Grid.Row="1" Visibility="Visible">
+        <Grid Name="PickupPoints_Grid" Grid.Row="1" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200"/>
                 <ColumnDefinition Width="Auto"/>
@@ -2401,10 +2404,400 @@
             </Border>
         </Grid>
 
-        <Grid Name="News_Grid" Grid.Row="1" Visibility="Collapsed">
+        <Grid Name="News_Grid" Grid.Row="1" Visibility="Visible">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="450"/>
+            </Grid.ColumnDefinitions>
 
+            <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Фильтр"/>
+
+                    <Grid Grid.Row="1" Margin="5, 0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Text="Тема" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <TextBox FontSize="16" Grid.Row="1" Name="News_Title_Filter_TextBox"
+                                     Text="{Binding NewsFilter.title, Converter={StaticResource TextToSerchableConverter}}"/>
+                            <TextBlock Grid.Row="1" Text="Тема"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=News_Title_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <Grid Grid.Row="1" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Дата создания" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+                            <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
+                                                 x:Name="News_DateTime_From_Filter_TextBox"
+                                                 Value="{Binding NewsFilter.datetime_from, 
+                                Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"/>
+
+                            <TextBlock Grid.Row="1" Text="От"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=News_DateTime_From_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=News_DateTime_From_Filter_TextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
+
+                            <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
+                                                 x:Name="News_DateTime_To_Filter_TextBox"
+                                                 Value="{Binding NewsFilter.datetime_to, 
+                                Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_59}}"/>
+                            <TextBlock Grid.Row="3" Text="До"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=News_DateTime_To_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=News_DateTime_To_Filter_TextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <Button Grid.Row="3" Style="{StaticResource Button_Style}" 
+                                Click="NewsFilter_Button_Click" Content="Поиск" 
+                                Margin="5" Padding="5" Height="Auto"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <DataGrid x:Name="News_DataGrid" ItemsSource="{Binding News, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                          FontSize="16" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          EnableColumnVirtualization="False"
+                          EnableRowVirtualization="True"
+                          SelectionMode="Extended"
+                          SelectionChanged="News_DataGrid_SelectionChanged"
+                          SelectedItem="{Binding SelectedNews, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn SortMemberPath="title" Width="300">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">
+                                    <Style.Setters>
+                                        <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+                                    </Style.Setters>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding title}" TextWrapping="Wrap" Margin="3, 0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="Тема" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Binding="{Binding creation_time, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View}" 
+                                            CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="135">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="Дата создания" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding Path=notified, Converter={StaticResource BoolToNotifiedConverter}}" 
+                                            CellStyle="{StaticResource DataGridCell_NoBorder_Style}" IsReadOnly="True" Width="120">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="Состояние" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Style="{StaticResource Button_Style}" Grid.Column="0" 
+                            Click="News_Create_New_Button_Click" Content="Создать новую новость"
+                            Margin="5" Padding="5" Height="Auto"/>
+
+                    <Button Grid.Column="1" Margin="5" Padding="5"
+                            Click="News_Delete_Button_Click">
+                        <Button.Style>
+                            <Style BasedOn="{StaticResource Button_Style}" TargetType="Button">
+                                <Setter Property="Content" Value="Удалить выбранные новости" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=News_DataGrid}" Value="0">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                        <Setter Property="Content" Value="Удалить выбранную новость" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedItems.Count, ElementName=News_DataGrid}" Value="1">
+                                        <Setter Property="Content" Value="Удалить выбранную новость" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+            </Grid>
+
+            <GridSplitter Grid.Column="3" BorderThickness="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
+
+            <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="4">
+                <Grid>
+                    <Grid Visibility ="Visible">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedItem, ElementName=News_DataGrid, Mode=OneWay}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Информация о новости"/>
+
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition />
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Тема: " FontSize="16" Margin="5, 7"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.title, ElementName=News_DataGrid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="16" Margin="5, 7, 10, 7" IsReadOnly="True"/>
+                            </Grid>
+
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Дата создания: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" Text="{Binding SelectedItem.creation_time, Converter={StaticResource DateTimeToStringConverter}, ConverterParameter=View, ElementName=News_DataGrid, Mode=OneWay}" IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Состояние: " FontSize="16" Margin="5, 7" TextWrapping="Wrap"/>
+                                <TextBox Grid.Column="1" 
+                                         Text="{Binding SelectedItem.notified, ElementName=News_DataGrid, 
+                                    Converter={StaticResource BoolToNotifiedConverter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                         IsReadOnly="True" FontSize="16" Margin="5, 7, 10, 7"/>
+                            </Grid>
+
+                            <Grid Grid.Row="3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Описание: " FontSize="16" Margin="5, 7"/>
+                                <TextBox Grid.Column="1" TextWrapping="Wrap" MaxLength="1000"  VerticalScrollBarVisibility="Auto"
+                                         Text="{Binding SelectedItem.content, ElementName=News_DataGrid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                         FontSize="16" Margin="5, 7, 10, 7" IsReadOnly="True"/>
+                            </Grid>
+
+                            <Grid Grid.Row="4">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNewsImages.Count}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid Grid.Column="0" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Изображения: " FontSize="16" Margin="5, 7"/>
+                                </Grid>
+
+                                <Grid Grid.Column="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <ListView ItemsSource="{Binding SelectedNewsImages}"
+                                              Margin="0, 7, 10, 7" SelectionMode="Single">
+
+                                        <ListView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ListView.ItemsPanel>
+
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Focusable" Value="false"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Canvas x:Name="displayImageCanvas" Width="200" Height="200">
+                                                    <Image x:Name="displayImage" Source="{Binding image, Converter={StaticResource ByteArrayToImageConverter}, UpdateSourceTrigger=PropertyChanged}" Width="200" Height="200" Stretch="Uniform"/>
+
+                                                    <StackPanel x:Name="buttonPanel" Canvas.Left="30" Canvas.Top="42" Width="120" Orientation="Vertical" Background="Transparent">
+                                                        <Button x:Name="openButton" Content="В полный экран" HorizontalAlignment="Stretch" 
+                                                                Height="30" Opacity="0.95" Margin="2" Click="OpenButton_Click"/>
+                                                        <Button x:Name="saveButton" Content="Сохранить на диск" HorizontalAlignment="Stretch" 
+                                                                Height="30" Opacity="0.95" Margin="2" Click="SaveButton_Click"/>
+                                                    </StackPanel>
+
+                                                    <Canvas.Resources>
+                                                        <Style TargetType="StackPanel">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=displayImageCanvas}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                        <Style TargetType="Image">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=displayImageCanvas}" Value="True">
+                                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Canvas.Resources>
+                                                </Canvas>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                        <ListView.Style>
+                                            <Style TargetType="ListView">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding SelectedNewsImages.Count}" Value="0">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ListView.Style>
+                                    </ListView>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                    <Grid>
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedItem, ElementName=News_DataGrid, Mode=OneWay}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Label Style="{StaticResource InfoField_Style}" Foreground="LightGray" FontSize="25" HorizontalAlignment="Center" Content="Новость не выбрана"/>
+                    </Grid>
+                </Grid>
+            </Border>
         </Grid>
-
-
     </Grid>
 </Window>

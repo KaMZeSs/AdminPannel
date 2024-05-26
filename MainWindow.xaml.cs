@@ -34,6 +34,9 @@ using System.Diagnostics;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.Rendering;
 using System.Linq;
+using System.Drawing;
+using System.Globalization;
+using AdminPannel.Extensions;
 
 namespace AdminPannel
 {
@@ -55,7 +58,8 @@ namespace AdminPannel
                 { this.Products_Grid, this.OnProductSelected },
                 { this.Orders_Grid, this.OnOrdersSelected },
                 { this.SpecialOffers_Grid, this.OnSpecialOffersSelected },
-                { this.PickupPoints_Grid, this.OnPickupPointsSelected }
+                { this.PickupPoints_Grid, this.OnPickupPointsSelected },
+                { this.News_Grid, this.OnNewsSelected }
             };
 
             _new_category = String.Empty;
@@ -64,7 +68,6 @@ namespace AdminPannel
         #region Service Things
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -95,7 +98,7 @@ namespace AdminPannel
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Пункты выдачи")).First();
+            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Новости")).First();
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
         }
@@ -160,14 +163,15 @@ namespace AdminPannel
 
         private void MenuItem_Checked(object sender, RoutedEventArgs e)
         {
+            if (_isHandlingClick)
+                return;
             if (sender is not MenuItem item)
                 return;
             _isHandlingClick = true;
-            MoreEnumerable.ForEach(Grid_Menu.Items.Cast<MenuItem>().Where(x => x != item), (x) =>
-            {
-                x.IsChecked = false;
-            });
-            item.IsChecked = true;
+
+            Grid_Menu.UncheckAllMenuItems();
+            item.CheckMenuItemAndParents();
+
             _isHandlingClick = false;
         }
 
@@ -175,6 +179,7 @@ namespace AdminPannel
         {
             if (_isHandlingClick)
                 return;
+
             if (sender is not MenuItem item)
                 return;
 
@@ -727,7 +732,7 @@ namespace AdminPannel
             var count = selected_products.Count();
 
             var to_view = String.Join('\n', selected_products.Take(6).Select(x => $"[{x.id}] {x.name}"));
-            if (count > 10)
+            if (count > 6)
                 to_view += "\n...";
 
             if (MessageBox.Show($"Вы точно уверены, что хотите удалить данны{(count is 1 ? "й" : "е")} товар{(count is 1 ? "" : "ы")}? Вего удалить: {count}\n\n{to_view}",
@@ -1832,7 +1837,7 @@ namespace AdminPannel
 
         #endregion
 
-        #region SpecialOffers
+        #region SpecialOffers Grid
 
         enum SpecialOffersType
         {
@@ -2491,7 +2496,7 @@ namespace AdminPannel
 
         #endregion
 
-        #region PickupPoints
+        #region PickupPoints Grid
 
         private IEnumerable<KeyValuePair<String, String>> _pp_statuses = PP_StatusConverter.Statuses.ToList();
         public IEnumerable<KeyValuePair<String, String>> PPStatuses
@@ -2952,9 +2957,307 @@ namespace AdminPannel
 
         #endregion
 
-        #region News
+        #region News Grid
 
+        private async Task OnNewsSelected()
+        {
+            await UpdateNews();
+        }
 
+        private ObservableCollection<object> _news = new();
+        public ObservableCollection<object> News
+        {
+            get { return _news; }
+            set
+            {
+                _news.Clear();
+                _news = value;
+                OnPropertyChanged(nameof(News));
+            }
+        }
+
+        private async Task UpdateNews(bool ShouldBeFiltered = false)
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var cmd = this.CreateNewsSQL(ShouldBeFiltered);
+
+                    var news = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
+
+                    News = new ObservableCollection<object>(news);
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            if (News.Any())
+                this.News_DataGrid.SelectedItem = News.First();
+        }
+
+        private (String sql, object? data) CreateNewsSQL(bool ShouldBeFiltered = false)
+        {
+            var filter_string = String.Empty;
+
+            if (ShouldBeFiltered && NewsFilter is not null)
+            {
+                var expandoDict = (IDictionary<string, object>)NewsFilter;
+                var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);
+
+                foreach (var kvp in filter)
+                {
+                    filter_string += kvp.Key switch
+                    {
+                        "title" => " AND lower(title) LIKE lower(@title)",
+                        "datetime_from" => " AND ns.creation_time >= @datetime_from",
+                        "datetime_to" => " AND ns.creation_time <= @datetime_to",
+                        _ => ""
+                    };
+                }
+            }
+
+            var sql =
+                        @$"
+                        SELECT 
+                            id,
+                            title,
+                            content,
+                            creation_time,
+                            notified
+                        FROM news ns
+                        WHERE {filter_string}
+                        ORDER BY ns.id DESC";
+
+            sql = sql.Replace("WHERE \r\n                        ", "");
+            sql = sql.Replace("WHERE  AND", "WHERE");
+
+            return (sql, _news_filter);
+        }
+
+        private async void NewsFilter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateNews(ShouldBeFiltered: true);
+        }
+
+        private dynamic _news_filter = new ExpandoObject();
+        public dynamic NewsFilter
+        {
+            get { return _news_filter; }
+            set
+            {
+                _news_filter = value;
+                OnPropertyChanged(nameof(NewsFilter));
+            }
+        }
+
+        private dynamic? _selected_news;
+        public dynamic? SelectedNews
+        {
+            get { return _selected_news; }
+            set
+            {
+                _selected_news = value;
+                OnPropertyChanged(nameof(SelectedNews));
+            }
+        }
+
+        private ObservableCollection<object> _selected_news_images = new();
+        public ObservableCollection<object> SelectedNewsImages
+        {
+            get { return _selected_news_images; }
+            set
+            {
+                _selected_news_images.Clear();
+                _selected_news_images = value;
+                OnPropertyChanged(nameof(SelectedNewsImages));
+            }
+        }
+
+        private bool _should_update_news_images = true;
+        private async void News_DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_should_update_news_images is false)
+            {
+                _should_update_news_images = true;
+                return;
+            }
+
+            if (_selected_news is null)
+                return;
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var sql = @"SELECT * FROM news_images WHERE news_id = @news_id";
+
+                    var data = new
+                    {
+                        news_id = _selected_news.id
+                    };
+
+                    var news_images = await conn.QueryAsExpandoAsync(sql, data);
+                    SelectedNewsImages = new ObservableCollection<object>(news_images);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+        
+        private void News_Create_New_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new NewsCreationWindow();
+            var is_created = window.ShowDialog() ?? false;
+
+            var news_data = window.NewsData;
+            var news_images = window.NewsImages;
+
+            if (is_created is false)
+                return;
+
+            if (news_data is null || news_images is null)
+                return;
+
+            _should_update_news_images = false;
+
+            News.Insert(0, news_data);
+            SelectedNewsImages = new ObservableCollection<object>(news_images);
+            News_DataGrid.SelectedItem = news_data;
+        }
+
+        private async void News_Delete_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var selected_news = News_DataGrid.SelectedItems.Cast<dynamic>().ToArray();
+
+            if (selected_news is null)
+                return;
+
+            if (selected_news.Count() is 0)
+                return;
+
+            var count = selected_news.Count();
+
+            var to_view = String.Join('\n', selected_news.Take(6).Select(x => $"{x.title}"));
+            if (count > 6)
+                to_view += "\n...";
+
+            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данны{(count is 1 ? "й" : "е")} новост{(count is 1 ? "ь" : "и")}? Вего удалить: {count}\n\n{to_view}",
+                                "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning) is not MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    string sql = "DELETE FROM news WHERE id = ANY(@ids)";
+
+                    var data = new
+                    {
+                        ids = selected_news.Select(x => (int)x.id).ToArray()
+                    };
+
+                    int rowsAffected = await conn.ExecuteAsync(sql, data);
+
+                    foreach (var item in selected_news)
+                    {
+                        News.Remove(item);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Непредвиденная ошибка при удалении данных. Повторите попытку позже",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
+        }
+
+        private void OpenButton_Click(object sender, RoutedEventArgs e)
+        {
+            dynamic? image = (sender as FrameworkElement)?.DataContext;
+            if (image is null)
+                return;
+
+            if (new ByteArrayToImageConverter().Convert(image.image, typeof(BitmapImage), null, null) is BitmapImage imageSource)
+            {
+                var window = new Window
+                {
+                    Width = Math.Min(imageSource.PixelWidth / 1.3, 600),
+                    Background = System.Windows.Media.Brushes.Black,
+                    WindowStyle = WindowStyle.SingleBorderWindow,
+                    Title = "Изображение " + this.Title,
+                    Content = new System.Windows.Controls.Image
+                    {
+                        Source = imageSource,
+                        Stretch = System.Windows.Media.Stretch.Uniform
+                    }
+                };
+
+                double aspectRatio = (double)imageSource.PixelHeight / imageSource.PixelWidth;
+                window.Height = window.Width * aspectRatio + 19;
+
+                window.Show();
+            }
+        }
+
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            dynamic? image = (sender as FrameworkElement)?.DataContext;
+            if (image is null)
+                return;
+
+            var openFileDialog = new Microsoft.Win32.SaveFileDialog();
+            openFileDialog.Filter = "PNG (*.png)|*.png|JPG (*.jpg)|*.jpg|BMP (*.bmp)|*.bmp";
+            bool? result = openFileDialog.ShowDialog();
+
+            if (result is not true)
+                return;
+
+            string filePath = openFileDialog.FileName;
+
+            try
+            {
+                using (MemoryStream ms = new MemoryStream(image.image))
+                {
+                    using (Bitmap bitmap = new Bitmap(ms))
+                    {
+                        switch (filePath.Split('.').Last().ToUpper())
+                        {
+                            case "PNG":
+                            {
+                                bitmap.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+                                break;
+                            }
+                            case "JPG":
+                            {
+                                bitmap.Save(filePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                                break;
+                            }
+                            case "BMP":
+                            {
+                                bitmap.Save(filePath, System.Drawing.Imaging.ImageFormat.Bmp);
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при сохранении изображения: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                throw;
+            }
+        }
 
 
         #endregion
