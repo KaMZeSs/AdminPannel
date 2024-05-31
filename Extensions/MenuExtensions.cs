@@ -9,6 +9,26 @@ namespace AdminPannel.Extensions
 {
     public static class MenuExtensions
     {
+        public static List<MenuItem> GetAllMenuItems(this Menu menu)
+        {
+            List<MenuItem> menuItems = new List<MenuItem>();
+            GetMenuItemsRecursive(menu.Items, menuItems);
+            return menuItems;
+        }
+
+        private static void GetMenuItemsRecursive(ItemCollection items, List<MenuItem> menuItems)
+        {
+            foreach (object item in items)
+            {
+                if (item is MenuItem menuItem)
+                {
+                    menuItems.Add(menuItem);
+                    GetMenuItemsRecursive(menuItem.Items, menuItems);
+                }
+            }
+        }
+
+
         public static void CheckMenuItemAndParents(this MenuItem menuItem)
         {
             menuItem.IsChecked = true;

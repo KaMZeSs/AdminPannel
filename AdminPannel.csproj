@@ -10,6 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controls\**" />
+    <EmbeddedResource Remove="Controls\**" />
+    <None Remove="Controls\**" />
+    <Page Remove="Controls\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove=".env" />
     <None Remove="Assets\AddImage.png" />
     <None Remove="Assets\Cancel.png" />
@@ -20,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.102.2" />
     <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.0" />
     <PackageReference Include="morelinq" Version="4.2.0" />
@@ -39,10 +47,6 @@
     <Resource Include="Assets\Edit.png" />
     <Resource Include="Assets\Refresh.png" />
     <Resource Include="Assets\Trash.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controls\" />
   </ItemGroup>
 
 </Project>

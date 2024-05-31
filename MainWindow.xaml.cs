@@ -37,6 +37,11 @@ using System.Linq;
 using System.Drawing;
 using System.Globalization;
 using AdminPannel.Extensions;
+using System.Data;
+using System.Windows.Automation;
+using System.Windows.Controls.Primitives;
+using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace AdminPannel
 {
@@ -53,13 +58,26 @@ namespace AdminPannel
 
             DataContext = this;
 
-            onGridChange = new Dictionary<Grid, Func<Task>>()
+            gridByNames = new Dictionary<String, Grid>()
             {
-                { this.Products_Grid, this.OnProductSelected },
-                { this.Orders_Grid, this.OnOrdersSelected },
-                { this.SpecialOffers_Grid, this.OnSpecialOffersSelected },
-                { this.PickupPoints_Grid, this.OnPickupPointsSelected },
-                { this.News_Grid, this.OnNewsSelected }
+                { "Список товаров", this.Products_Grid },
+                { "Заказы", this.Orders_Grid },
+                { "Акции", this.SpecialOffers_Grid },
+                { "Пункты выдачи", this.PickupPoints_Grid },
+                { "Новости", this.News_Grid },
+                { "Объём продаж", this.SalesVolume_Grid },
+                { "Отчёт по акциям", this.TopPromotions_Grid }
+            };
+
+            updatesByName = new Dictionary<String, Func<Task>>()
+            {
+                { "Список товаров", this.OnProductSelected },
+                { "Заказы", this.OnOrdersSelected },
+                { "Акции", this.OnSpecialOffersSelected },
+                { "Пункты выдачи", this.OnPickupPointsSelected },
+                { "Новости", this.OnNewsSelected },
+                { "Объём продаж", this.OnSalesVolumeSelected },
+                { "Отчёт по акциям", this.OnTopPromotionsSelected }
             };
 
             _new_category = String.Empty;
@@ -98,7 +116,7 @@ namespace AdminPannel
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var menu = Grid_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Новости")).First();
+            var menu = Grid_Menu.GetAllMenuItems().Where(x => x.Header.Equals("Отчёт по акциям")).First();
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
         }
@@ -109,29 +127,21 @@ namespace AdminPannel
 
         Grid? currentGrid;
 
-        Dictionary<Grid, Func<Task>> onGridChange;
+        readonly Dictionary<String, Func<Task>> updatesByName;
+        readonly Dictionary<String, Grid> gridByNames;
 
-        private Grid? GridByName(string name)
+        // Флаг для предотвращения бесконечной рекурсии в меню
+        private bool _isHandlingClick;
+
+        private async void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            switch (name)
-            {
-                case "Заказы":
-                    return this.Orders_Grid;
-                case "Список товаров":
-                    return this.Products_Grid;
-                case "Акции":
-                    return this.SpecialOffers_Grid;
-                case "Пункты выдачи":
-                    return this.PickupPoints_Grid;
-                case "Новости":
-                    return this.News_Grid;
-            }
+            var item = sender as MenuItem;
+            if (item is null)
+                return;
 
-            return null;
-        }
+            this.gridByNames.TryGetValue(item.Header as string ?? "", out var grid);
+            this.updatesByName.TryGetValue(item.Header as string ?? "", out var func);
 
-        private void ChangeGrid(Grid? grid)
-        {
             if (grid is null)
                 return;
 
@@ -140,25 +150,10 @@ namespace AdminPannel
             currentGrid = grid;
             currentGrid.Visibility = Visibility.Visible;
 
-            try
-            {
-                this.onGridChange[currentGrid].Invoke();
-            }
-            catch { }
-        }
-
-        // Флаг для предотвращения бесконечной рекурсии в меню
-        private bool _isHandlingClick;
-
-        private void MenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            var item = sender as MenuItem;
-            if (item is null)
+            if (func is null)
                 return;
 
-            var grid = this.GridByName(item.Header as string ?? "");
-
-            ChangeGrid(grid);
+            await func.Invoke();
         }
 
         private void MenuItem_Checked(object sender, RoutedEventArgs e)
@@ -188,12 +183,16 @@ namespace AdminPannel
             _isHandlingClick = false;
         }
 
-        private void Refresh_Button_Click(object sender, RoutedEventArgs e)
+        private async void Refresh_Button_Click(object sender, RoutedEventArgs e)
         {
-            if (currentGrid is not null)
-                this.onGridChange[currentGrid].Invoke();
+            try
+            {
+                var grid_name = gridByNames.First(x => x.Value.Equals(currentGrid)).Key;
+                var func = updatesByName[grid_name];
+                await func.Invoke();
+            }
+            catch { }
         }
-
 
         #endregion
 
@@ -1053,6 +1052,13 @@ namespace AdminPannel
             }
         }
 
+
+        private ObservableCollection<KeyValuePair<String, String>> statuses_wo_empty = new(StatusConverter.Statuses.Where(x => x.Key.Length is not 0).ToList());
+        public ObservableCollection<KeyValuePair<String, String>> Statuses_WO_Empty
+        {
+            get { return new(statuses.Where(x => x.Key.Length is not 0).ToList()); }
+        }
+
         public ObservableCollection<object> _orders_pickup_points = new();
         public ObservableCollection<object> Orders_PickupPoints
         {
@@ -1437,7 +1443,7 @@ namespace AdminPannel
         {
             if (_selected_order is null)
                 return;
-            if (_order_notification.Trim().Length is not 0)
+            if (_order_notification.Trim().Length is 0)
                 return;
 
             try
@@ -1446,8 +1452,8 @@ namespace AdminPannel
                 {
                     string sql =
                                 @"INSERT INTO order_notifications 
-                                (order_id, message, is_important) 
-                                VALUES (@order_id, @message, True)";
+                                (order_id, message) 
+                                VALUES (@order_id, @message)";
 
                     var data = new
                     {
@@ -1456,6 +1462,9 @@ namespace AdminPannel
                     };
 
                     await conn.ExecuteAsync(sql, data);
+
+                    MessageBox.Show($"Уведомление успешно отправлено пользователю",
+                        "Успешная отправка", MessageBoxButton.OK);
                 }
             }
             catch (Exception)
@@ -3259,6 +3268,340 @@ namespace AdminPannel
             }
         }
 
+
+        #endregion
+
+        #region Statistics
+
+        private ObservableCollection<object> _statistics = new();
+        public ObservableCollection<object> Statistics
+        {
+            get { return _statistics; }
+            set
+            {
+                _statistics.Clear();
+                _statistics = value;
+                OnPropertyChanged(nameof(Statistics));
+            }
+        }
+
+        private void SaveStatistics(DataGrid dataGrid)
+        {
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog();
+            saveFileDialog.Filter = "Excel (*.xlsx)|*.xlsx";
+            bool? result = saveFileDialog.ShowDialog();
+
+            if (result is not true)
+                return;
+
+            string filePath = saveFileDialog.FileName;
+            try
+            {
+                var dt = dataGrid.GetDataTable();
+                if (dt is null)
+                    return;
+
+                XLWorkbook wb = new XLWorkbook();
+                var worksheet = wb.AddWorksheet(dt, "Статистика");
+
+
+                //// Iterate through rows and columns, and set the cell values with the correct data types
+                //for (int row = 1; row <= dt.Rows.Count; row++)
+                //{
+                //    for (int col = 1; col <= dt.Columns.Count; col++)
+                //    {
+                //        object value = dt.Rows[row - 1][col - 1];
+                //        Type type = value.GetType();
+
+                //        if (type == typeof(string))
+                //            worksheet.Cell(row, col).Value = (string)value;
+                //        else if (type == typeof(int))
+                //            worksheet.Cell(row, col).Value = (int)value;
+                //        else if (type == typeof(bool))
+                //            worksheet.Cell(row, col).Value = (bool)value;
+                //    }
+                //}
+
+
+                //// Get the data types from the first row
+                //int firstRowIndex = 1;
+                //IXLRow firstRow = worksheet.Row(firstRowIndex);
+
+                //// Iterate through columns and set the data type based on the first row
+                //for (int col = 1; col <= dt.Columns.Count; col++)
+                //{
+                //    XLDataType dataType = firstRow.Cell(col).DataType;
+                //    var cells = worksheet.Column(col).Cells();
+
+                //    foreach (var cell in cells)
+                //    {
+                        
+                //    }
+                //}
+
+
+                wb.SaveAs(filePath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при сохранении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                throw;
+            }
+        }
+
+        #region Sales Volume
+
+        private async Task OnSalesVolumeSelected()
+        {
+            SalesVolumeFilter = new ExpandoObject();
+
+            // Get the first DateTime of the current month (with time set to 00:00:00)
+            DateTime firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+            // Get the last DateTime of the current month (with time set to 23:59:59)
+            DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+            DateTime lastDateTimeOfMonth = lastDayOfMonth.AddHours(23).AddMinutes(59).AddSeconds(59);
+
+            SalesVolumeFilter.datetime_from = firstDayOfMonth;
+            SalesVolumeFilter.datetime_to = lastDateTimeOfMonth;
+
+            await UpdateSalesVolume(true);
+        }
+
+        private async Task UpdateSalesVolume(bool ShouldBeFiltered = false)
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var cmd = this.CreateSalesVolumeSQL(ShouldBeFiltered);
+
+                    var statistics = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
+
+                    Statistics = new ObservableCollection<object>(statistics);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private (String sql, object? data) CreateSalesVolumeSQL(bool ShouldBeFiltered = false)
+        {
+            var group_filter_string = String.Empty;
+            var filter_string = String.Empty;
+
+            if (ShouldBeFiltered && SalesVolumeFilter is not null)
+            {
+                var expandoDict = (IDictionary<string, object>)SalesVolumeFilter;
+                var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);
+
+                foreach (var kvp in filter)
+                {
+                    group_filter_string += kvp.Key switch
+                    {
+                        "datetime_from" => " AND o.order_timestamp >= @datetime_from",
+                        "datetime_to" => " AND o.order_timestamp <= @datetime_to",
+                        _ => ""
+                    };
+                }
+
+                foreach (var kvp in filter)
+                {
+                    filter_string += kvp.Key switch
+                    {
+                        "total_quantity_from" => " AND od.total_quantity >= @total_quantity_from",
+                        "total_quantity_to" => " AND od.total_quantity <= @total_quantity_to",
+
+                        "promotion_quantity_from" => " AND od.promotion_quantity >= @promotion_quantity_from",
+                        "promotion_quantity_to" => " AND od.promotion_quantity <= @promotion_quantity_to",
+
+                        "regular_quantity_from" => " AND od.regular_quantity >= @regular_quantity_from",
+                        "regular_quantity_to" => " AND od.regular_quantity <= @regular_quantity_to",
+
+                        "remaining_stock_from" => " AND p.quantity >= @remaining_stock_from",
+                        "remaining_stock_to" => " AND p.quantity <= @remaining_stock_to",
+
+                        _ => ""
+                    };
+                }
+            }
+
+            var sql =
+                        @$"
+                        WITH orders_data AS (
+                        SELECT
+                            p.id AS product_id,
+                            p.name AS product_name,
+                            SUM(oi.quantity) AS total_quantity,
+                            SUM(CASE WHEN so.id IS NOT NULL THEN oi.quantity ELSE 0 END) AS promotion_quantity,
+                            SUM(CASE WHEN so.id IS NULL THEN oi.quantity ELSE 0 END) AS regular_quantity
+                        FROM
+                            orders o
+                            JOIN order_items oi ON o.id = oi.order_id
+                            JOIN products p ON oi.product_id = p.id
+                            LEFT JOIN special_offers so ON oi.product_id = so.product_id
+                              AND o.order_timestamp BETWEEN so.start_datetime AND so.end_datetime
+                        WHERE {group_filter_string}
+                        GROUP BY
+                            p.id, p.name
+                        )
+                        SELECT
+                            od.product_id,
+                            od.product_name,
+                            od.total_quantity,
+                            od.promotion_quantity,
+                            od.regular_quantity,
+                            p.quantity AS remaining_stock
+                        FROM
+                            orders_data od
+                            JOIN products p ON od.product_id = p.id
+                        WHERE {filter_string}
+                        ORDER BY
+                            od.total_quantity DESC;";
+
+            sql = sql.Replace("WHERE \r\n                        ", "");
+            sql = sql.Replace("WHERE  AND", "WHERE");
+
+            return (sql, _sales_volume_filter);
+        }
+
+        private async void Sales_Volume_Filter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateSalesVolume(ShouldBeFiltered: true);
+        }
+
+        private void SalesVolume_SaveStatistics_Button_Click(object sender, RoutedEventArgs e)
+        {
+            SaveStatistics(SalesVolume_DataGrid);
+        }
+
+        private dynamic _sales_volume_filter = new ExpandoObject();
+        public dynamic SalesVolumeFilter
+        {
+            get { return _sales_volume_filter; }
+            set
+            {
+                _sales_volume_filter = value;
+                OnPropertyChanged(nameof(SalesVolumeFilter));
+            }
+        }
+
+        #endregion
+
+        #region Top Promotions 
+
+        private async Task OnTopPromotionsSelected()
+        {
+            TopPromotionsFilter = new ExpandoObject();
+
+            // Get the first DateTime of the current month (with time set to 00:00:00)
+            DateTime firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+            // Get the last DateTime of the current month (with time set to 23:59:59)
+            DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+            DateTime lastDateTimeOfMonth = lastDayOfMonth.AddHours(23).AddMinutes(59).AddSeconds(59);
+
+            TopPromotionsFilter.datetime_from = firstDayOfMonth;
+            TopPromotionsFilter.datetime_to = lastDateTimeOfMonth;
+
+            await UpdateTopPromotions(true);
+        }
+
+        private async Task UpdateTopPromotions(bool ShouldBeFiltered = false)
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var cmd = this.CreateTopPromotionsSQL(ShouldBeFiltered);
+
+                    var statistics = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
+
+                    Statistics = new ObservableCollection<object>(statistics);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private (String sql, object? data) CreateTopPromotionsSQL(bool ShouldBeFiltered = false)
+        {
+            var filter_string = String.Empty;
+
+            if (ShouldBeFiltered && TopPromotionsFilter is not null)
+            {
+                var expandoDict = (IDictionary<string, object>)TopPromotionsFilter;
+                var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);
+
+                foreach (var kvp in filter)
+                {
+                    filter_string += kvp.Key switch
+                    {
+                        "datetime_from" => " AND order_timestamp >= @datetime_from",
+                        "datetime_to" => " AND order_timestamp <= @datetime_to",
+                        _ => ""
+                    };
+                }
+            }
+
+            var sql =
+                        @$"
+                        SELECT
+                            p.id AS product_id,
+                            p.name AS product_name,
+                            so.discount,
+                            so.start_datetime,
+                            so.end_datetime,
+                            COALESCE(SUM(oi.quantity), 0) AS total_quantity
+                        FROM
+                            special_offers so
+                            LEFT JOIN order_items oi ON oi.product_id = so.product_id
+                                AND oi.order_id IN (
+                                    SELECT id
+                                    FROM orders
+                                    WHERE order_timestamp BETWEEN so.start_datetime AND so.end_datetime
+                                        AND order_timestamp BETWEEN COALESCE(@datetime_from, so.start_datetime) AND COALESCE(@datetime_to, so.end_datetime)
+                                )
+                            JOIN products p ON p.id = so.product_id
+                        WHERE
+                            (so.start_datetime BETWEEN COALESCE(@datetime_from, so.start_datetime) AND COALESCE(@datetime_to, so.end_datetime))
+                            OR (so.end_datetime BETWEEN COALESCE(@datetime_from, so.start_datetime) AND COALESCE(@datetime_to, so.end_datetime))
+                        GROUP BY
+                            so.id, p.id
+                        ORDER BY
+                            total_quantity DESC;";
+
+            sql = sql.Replace("WHERE \r\n                        ", "");
+            sql = sql.Replace("WHERE  AND", "WHERE");
+
+            return (sql, _top_promotions_filter);
+        }
+
+        private async void TopPromotions_Filter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateTopPromotions(ShouldBeFiltered: true);
+        }
+
+        private void TopPromotions_SaveStatistics_Button_Click(object sender, RoutedEventArgs e)
+        {
+            SaveStatistics(TopPromotions_DataGrid);
+        }
+
+        private dynamic _top_promotions_filter = new ExpandoObject();
+        public dynamic TopPromotionsFilter
+        {
+            get { return _top_promotions_filter; }
+            set
+            {
+                _top_promotions_filter = value;
+                OnPropertyChanged(nameof(TopPromotionsFilter));
+            }
+        }
+
+        #endregion
 
         #endregion
     }
