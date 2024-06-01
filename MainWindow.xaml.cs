@@ -1,27 +1,17 @@
 ﻿using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
-using System.DirectoryServices;
 using System.Dynamic;
 using System.IO;
-using System.Net;
-using System.Net.WebSockets;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shell;
-using System.Windows.Threading;
 
-using AdminPannel.Converters;
+using System.Diagnostics;
+using System.Data;
+using System.Drawing;
 
 using Dapper;
 
@@ -30,18 +20,13 @@ using MoreLinq.Extensions;
 
 using Npgsql;
 
-using System.Diagnostics;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.Rendering;
-using System.Linq;
-using System.Drawing;
-using System.Globalization;
-using AdminPannel.Extensions;
-using System.Data;
-using System.Windows.Automation;
-using System.Windows.Controls.Primitives;
+
 using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Spreadsheet;
+
+using AdminPannel.Extensions;
+using AdminPannel.Converters;
 
 namespace AdminPannel
 {
@@ -66,7 +51,8 @@ namespace AdminPannel
                 { "Пункты выдачи", this.PickupPoints_Grid },
                 { "Новости", this.News_Grid },
                 { "Объём продаж", this.SalesVolume_Grid },
-                { "Отчёт по акциям", this.TopPromotions_Grid }
+                { "Отчёт по акциям", this.TopPromotions_Grid },
+                { "Загрузка пунктов выдачи", this.PickupPointsLoad_Grid },
             };
 
             updatesByName = new Dictionary<String, Func<Task>>()
@@ -77,7 +63,8 @@ namespace AdminPannel
                 { "Пункты выдачи", this.OnPickupPointsSelected },
                 { "Новости", this.OnNewsSelected },
                 { "Объём продаж", this.OnSalesVolumeSelected },
-                { "Отчёт по акциям", this.OnTopPromotionsSelected }
+                { "Отчёт по акциям", this.OnTopPromotionsSelected },
+                { "Загрузка пунктов выдачи", this.OnPickupPointsLoadSelected },
             };
 
             _new_category = String.Empty;
@@ -116,7 +103,7 @@ namespace AdminPannel
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var menu = Grid_Menu.GetAllMenuItems().Where(x => x.Header.Equals("Отчёт по акциям")).First();
+            var menu = Grid_Menu.GetAllMenuItems().Where(x => x.Header.Equals("Заказы")).First();
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
         }
@@ -214,7 +201,15 @@ namespace AdminPannel
 
         private async Task OnProductSelected()
         {
-            await UpdateCategories();
+            try
+            {
+                await UpdateCategories();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async Task UpdateCategories()
@@ -254,10 +249,18 @@ namespace AdminPannel
 
         private async void CategoriesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var selectedCategory = (sender as ListView)?.SelectedItem;
-            if (selectedCategory != null)
-            { 
-                await UpdateProducts();
+            try
+            {
+                var selectedCategory = (sender as ListView)?.SelectedItem;
+                if (selectedCategory != null)
+                {
+                    await UpdateProducts();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -706,15 +709,23 @@ namespace AdminPannel
 
         private async Task UpdateProducts(bool ProductsShouldBeFiltered = false)
         {
-            await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+            try
             {
-                var cmd = this.CreateProductSQL(ProductsShouldBeFiltered);
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var cmd = this.CreateProductSQL(ProductsShouldBeFiltered);
 
-                var products = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
+                    var products = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
 
-                Products = new ObservableCollection<object>(products);
-                
-                is_products_filtered = ProductsShouldBeFiltered;
+                    Products = new ObservableCollection<object>(products);
+
+                    is_products_filtered = ProductsShouldBeFiltered;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -832,10 +843,18 @@ namespace AdminPannel
 
         private async void ProductsFilter_Button_Click(object sender, RoutedEventArgs e)
         {
-            if (ProductsFilter is null)
-                return;
+            try
+            {
+                if (ProductsFilter is null)
+                    return;
 
-            await UpdateProducts(ProductsShouldBeFiltered: true);
+                await UpdateProducts(ProductsShouldBeFiltered: true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         #endregion
@@ -930,11 +949,19 @@ namespace AdminPannel
 
         private async Task OnOrdersSelected()
         {
-            await UpdateOrdersPickupPoints();
-            var menu = Orders_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Новые")).First();
-            menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
-            current_orders_type = OrdersType.New;
-            await UpdateOrders();
+            try
+            {
+                await UpdateOrdersPickupPoints();
+                var menu = Orders_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Новые")).First();
+                menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
+                current_orders_type = OrdersType.New;
+                await UpdateOrders();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         public ObservableCollection<object> _orders = new();
@@ -1026,7 +1053,15 @@ namespace AdminPannel
         }
         private async void OrdersFilter_Button_Click(object sender, RoutedEventArgs e)
         {
-            await UpdateOrders(OrdersShouldBeFiltered: true);
+            try
+            {
+                await UpdateOrders(OrdersShouldBeFiltered: true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private dynamic? _orders_filter = new ExpandoObject();
@@ -1164,7 +1199,15 @@ namespace AdminPannel
 
             OrderCanBeChanged = !"canceled".Equals(status);
 
-            await UpdateCurrentOrderItems(Selected_Order.order_id);
+            try
+            {
+                await UpdateCurrentOrderItems(Selected_Order.order_id);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         
         private void Orders_PickupPoint_Decline_Button_Click(object sender, RoutedEventArgs e)
@@ -1730,7 +1773,7 @@ namespace AdminPannel
             int table_size = 12;
 
             // Создание нового документа PDF
-            var document = new Document();
+            var document = new MigraDoc.DocumentObjectModel.Document();
             document.Info.Title = $"Заказ №{order_info.order_id}";
 
             // Создание секции для заголовка
@@ -1928,7 +1971,16 @@ namespace AdminPannel
             var menu = SpecialOffers_Menu.Items.Cast<MenuItem>().Where(x => x.Header.Equals("Текущие")).First();
             menu.RaiseEvent(new RoutedEventArgs(MenuItem.CheckedEvent));
             current_special_offer_type = SpecialOffersType.Current;
-            await UpdateSpecialOffers();
+
+            try
+            {
+                await UpdateSpecialOffers();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         public ObservableCollection<object> _special_offers = new();
@@ -2024,7 +2076,15 @@ namespace AdminPannel
         
         private async void SpecialOffersFilter_Button_Click(object sender, RoutedEventArgs e)
         {
-            await UpdateSpecialOffers(ShouldBeFiltered: true);
+            try
+            {
+                await UpdateSpecialOffers(ShouldBeFiltered: true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private dynamic _special_offers_filter = new ExpandoObject();
@@ -2518,7 +2578,15 @@ namespace AdminPannel
 
         private async Task OnPickupPointsSelected()
         {
-            await UpdatePickupPoints();
+            try
+            {
+                await UpdatePickupPoints();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         public ObservableCollection<object> _pickup_points = new();
@@ -2601,7 +2669,15 @@ namespace AdminPannel
 
         private async void PickupPointsFilter_Button_Click(object sender, RoutedEventArgs e)
         {
-            await UpdatePickupPoints(ShouldBeFiltered: true);
+            try
+            {
+                await UpdatePickupPoints(ShouldBeFiltered: true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Непредвиденная ошибка при получении данных: {ex.Message}",
+                    "Непредвиденная ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private dynamic _pickup_points_filter = new ExpandoObject();
@@ -3153,7 +3229,7 @@ namespace AdminPannel
             if (count > 6)
                 to_view += "\n...";
 
-            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данны{(count is 1 ? "й" : "е")} новост{(count is 1 ? "ь" : "и")}? Вего удалить: {count}\n\n{to_view}",
+            if (MessageBox.Show($"Вы точно уверены, что хотите удалить данн{(count is 1 ? "ую" : "ые")} новост{(count is 1 ? "ь" : "и")}? Вего удалить: {count}\n\n{to_view}",
                                 "Подтвердите действие", MessageBoxButton.OKCancel, MessageBoxImage.Warning) is not MessageBoxResult.OK)
             {
                 return;
@@ -3304,42 +3380,6 @@ namespace AdminPannel
                 XLWorkbook wb = new XLWorkbook();
                 var worksheet = wb.AddWorksheet(dt, "Статистика");
 
-
-                //// Iterate through rows and columns, and set the cell values with the correct data types
-                //for (int row = 1; row <= dt.Rows.Count; row++)
-                //{
-                //    for (int col = 1; col <= dt.Columns.Count; col++)
-                //    {
-                //        object value = dt.Rows[row - 1][col - 1];
-                //        Type type = value.GetType();
-
-                //        if (type == typeof(string))
-                //            worksheet.Cell(row, col).Value = (string)value;
-                //        else if (type == typeof(int))
-                //            worksheet.Cell(row, col).Value = (int)value;
-                //        else if (type == typeof(bool))
-                //            worksheet.Cell(row, col).Value = (bool)value;
-                //    }
-                //}
-
-
-                //// Get the data types from the first row
-                //int firstRowIndex = 1;
-                //IXLRow firstRow = worksheet.Row(firstRowIndex);
-
-                //// Iterate through columns and set the data type based on the first row
-                //for (int col = 1; col <= dt.Columns.Count; col++)
-                //{
-                //    XLDataType dataType = firstRow.Cell(col).DataType;
-                //    var cells = worksheet.Column(col).Cells();
-
-                //    foreach (var cell in cells)
-                //    {
-                        
-                //    }
-                //}
-
-
                 wb.SaveAs(filePath);
             }
             catch (Exception ex)
@@ -3350,21 +3390,29 @@ namespace AdminPannel
             }
         }
 
+        private DateTime FirstDateTimeOfMonth
+        {
+            get
+            {
+                return new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            }
+        }
+        private DateTime LastDateTimeOfMonth
+        {
+            get
+            {
+                return FirstDateTimeOfMonth.AddMonths(1).AddDays(-1).AddHours(23).AddMinutes(59).AddSeconds(59);
+            }
+        }
+
         #region Sales Volume
 
         private async Task OnSalesVolumeSelected()
         {
             SalesVolumeFilter = new ExpandoObject();
 
-            // Get the first DateTime of the current month (with time set to 00:00:00)
-            DateTime firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-
-            // Get the last DateTime of the current month (with time set to 23:59:59)
-            DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
-            DateTime lastDateTimeOfMonth = lastDayOfMonth.AddHours(23).AddMinutes(59).AddSeconds(59);
-
-            SalesVolumeFilter.datetime_from = firstDayOfMonth;
-            SalesVolumeFilter.datetime_to = lastDateTimeOfMonth;
+            SalesVolumeFilter.datetime_from = FirstDateTimeOfMonth;
+            SalesVolumeFilter.datetime_to = LastDateTimeOfMonth;
 
             await UpdateSalesVolume(true);
         }
@@ -3496,15 +3544,8 @@ namespace AdminPannel
         {
             TopPromotionsFilter = new ExpandoObject();
 
-            // Get the first DateTime of the current month (with time set to 00:00:00)
-            DateTime firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-
-            // Get the last DateTime of the current month (with time set to 23:59:59)
-            DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
-            DateTime lastDateTimeOfMonth = lastDayOfMonth.AddHours(23).AddMinutes(59).AddSeconds(59);
-
-            TopPromotionsFilter.datetime_from = firstDayOfMonth;
-            TopPromotionsFilter.datetime_to = lastDateTimeOfMonth;
+            TopPromotionsFilter.datetime_from = FirstDateTimeOfMonth;
+            TopPromotionsFilter.datetime_to = LastDateTimeOfMonth;
 
             await UpdateTopPromotions(true);
         }
@@ -3540,8 +3581,12 @@ namespace AdminPannel
                 {
                     filter_string += kvp.Key switch
                     {
-                        "datetime_from" => " AND order_timestamp >= @datetime_from",
-                        "datetime_to" => " AND order_timestamp <= @datetime_to",
+                        "total_quantity_from" => " AND COALESCE(SUM(oi.quantity), 0) >= @total_quantity_from",
+                        "total_quantity_to" => " AND COALESCE(SUM(oi.quantity), 0) <= @total_quantity_to",
+                        "discount_from" => " AND so.discount >= @discount_from",
+                        "discount_to" => " AND so.discount <= @discount_to",
+                        "product_id" => " AND p.id = @product_id",
+                        "product_name" => " AND lower(p.name) LIKE lower(@product_name)",
                         _ => ""
                     };
                 }
@@ -3567,15 +3612,18 @@ namespace AdminPannel
                                 )
                             JOIN products p ON p.id = so.product_id
                         WHERE
-                            (so.start_datetime BETWEEN COALESCE(@datetime_from, so.start_datetime) AND COALESCE(@datetime_to, so.end_datetime))
-                            OR (so.end_datetime BETWEEN COALESCE(@datetime_from, so.start_datetime) AND COALESCE(@datetime_to, so.end_datetime))
+                            ((so.start_datetime BETWEEN COALESCE(@datetime_from, so.start_datetime) AND COALESCE(@datetime_to, so.end_datetime))
+                            OR (so.end_datetime BETWEEN COALESCE(@datetime_from, so.start_datetime) AND COALESCE(@datetime_to, so.end_datetime)))
                         GROUP BY
                             so.id, p.id
+                        HAVING {filter_string}
                         ORDER BY
                             total_quantity DESC;";
 
             sql = sql.Replace("WHERE \r\n                        ", "");
             sql = sql.Replace("WHERE  AND", "WHERE");
+            sql = sql.Replace("HAVING \r\n                        ", "");
+            sql = sql.Replace("HAVING  AND", "HAVING");
 
             return (sql, _top_promotions_filter);
         }
@@ -3598,6 +3646,120 @@ namespace AdminPannel
             {
                 _top_promotions_filter = value;
                 OnPropertyChanged(nameof(TopPromotionsFilter));
+            }
+        }
+
+        private void TopPromotions_Find_Product_Filter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new SelectProductWindow();
+            var res = window.ShowDialog();
+            if (res == true)
+            {
+                var selected = window.SelectedProduct;
+                TopPromotionsFilter.product_id = selected.id;
+            }
+        }
+
+        #endregion
+
+        #region PickupPoints Load
+
+        private async Task OnPickupPointsLoadSelected()
+        {
+            PickupPointsLoadFilter = new ExpandoObject();
+
+            PickupPointsLoadFilter.datetime_from = FirstDateTimeOfMonth;
+            PickupPointsLoadFilter.datetime_to = LastDateTimeOfMonth;
+
+            await UpdatePickupPointsLoad(true);
+        }
+
+        private async Task UpdatePickupPointsLoad(bool ShouldBeFiltered = false)
+        {
+            try
+            {
+                await using (var conn = await NpgsqlConnectionManager.Instance.GetConnectionAsync())
+                {
+                    var cmd = this.CreatePickupPointsLoadSQL(ShouldBeFiltered);
+
+                    var statistics = await conn.QueryAsExpandoAsync(cmd.sql, cmd.data);
+
+                    Statistics = new ObservableCollection<object>(statistics);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private (String sql, object? data) CreatePickupPointsLoadSQL(bool ShouldBeFiltered = false)
+        {
+            var filter_string = String.Empty;
+            var having_string = String.Empty;
+
+            if (ShouldBeFiltered && PickupPointsLoadFilter is not null)
+            {
+                var expandoDict = (IDictionary<string, object>)PickupPointsLoadFilter;
+                var filter = expandoDict.Where(kvp => kvp.Value is not null && kvp.Value.ToString() != String.Empty);
+
+                foreach (var kvp in filter)
+                {
+                    filter_string += kvp.Key switch
+                    {
+                        "datetime_from" => " AND o.order_timestamp >= @datetime_from",
+                        "datetime_to" => " AND o.order_timestamp <= @datetime_to",
+                        "address" => " AND lower(pp.address) LIKE lower(@address)",
+                        _ => ""
+                    };
+                }
+
+                foreach (var kvp in filter)
+                {
+                    having_string += kvp.Key switch
+                    {
+                        "total_quantity_from" => " AND COUNT(*) >= @total_quantity_from",
+                        "total_quantity_to" => " AND COUNT(*) <= @total_quantity_to",
+                        _ => ""
+                    };
+                }
+            }
+
+            var sql =
+                        @$"
+                        SELECT pp.address, COUNT(*) AS order_count
+                        FROM orders o
+                        JOIN pickup_points pp ON pp.id = o.pickup_point_id
+                        WHERE {filter_string}
+                        GROUP BY pp.address
+                        HAVING {having_string}
+                        ORDER BY order_count DESC;";
+
+            sql = sql.Replace("WHERE \r\n                        ", "");
+            sql = sql.Replace("WHERE  AND", "WHERE");
+            sql = sql.Replace("HAVING \r\n                        ", "");
+            sql = sql.Replace("HAVING  AND", "HAVING");
+
+            return (sql, _pickup_points_load_filter);
+        }
+
+        private async void PickupPointsLoad_Filter_Button_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdatePickupPointsLoad(ShouldBeFiltered: true);
+        }
+
+        private void PickupPointsLoad_SaveStatistics_Button_Click(object sender, RoutedEventArgs e)
+        {
+            SaveStatistics(PickupPointsLoad_DataGrid);
+        }
+
+        private dynamic _pickup_points_load_filter = new ExpandoObject();
+        public dynamic PickupPointsLoadFilter
+        {
+            get { return _pickup_points_load_filter; }
+            set
+            {
+                _pickup_points_load_filter = value;
+                OnPropertyChanged(nameof(PickupPointsLoadFilter));
             }
         }
 

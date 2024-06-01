@@ -133,6 +133,7 @@
                 <MenuItem Header="Статистика" Style="{StaticResource MenuItem_Style}" IsCheckable="False">
                     <MenuItem Header="Объём продаж" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
                     <MenuItem Header="Отчёт по акциям" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
+                    <MenuItem Header="Загрузка пунктов выдачи" Style="{StaticResource MenuItem_Style}" IsCheckable="True" Checked="MenuItem_Checked" Unchecked="MenuItem_Unchecked" Click="MenuItem_Click"/>
                 </MenuItem>
             </Menu>
 
@@ -246,8 +247,9 @@
                                 <TextBlock Text="Дата заказа" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
 
                                 <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
-                                                     x:Name="Orders_Order_DateTime_From_Filter_TextBox"
-                                                     Value="{Binding OrdersFilter.order_timestamp_from, Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"/>
+                                                     x:Name="Orders_Order_DateTime_From_Filter_TextBox" TextAlignment="Left"
+                                                     Value="{Binding OrdersFilter.order_timestamp_from, 
+                                    Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"/>
 
                                 <TextBlock Grid.Row="1" Text="От"
                                            IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
@@ -271,8 +273,9 @@
                                 <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
 
                                 <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
-                                                     x:Name="Orders_Order_DateTime_To_Filter_TextBox"
-                                                     Value="{Binding OrdersFilter.order_timestamp_to, Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_59}}"/>
+                                                     x:Name="Orders_Order_DateTime_To_Filter_TextBox" TextAlignment="Left"
+                                                     Value="{Binding OrdersFilter.order_timestamp_to, 
+                                    Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_59}}"/>
                                 <TextBlock Grid.Row="3" Text="До"
                                            IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
                                            Foreground="LightGray"
@@ -1305,8 +1308,9 @@
                                 <TextBlock Text="Дата проведения" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
 
                                 <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
-                                         x:Name="SpecialOffers_DateTime_From_Filter_TextBox"
-                                         Value="{Binding SpecialOffersFilter.datetime_from, Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"/>
+                                         x:Name="SpecialOffers_DateTime_From_Filter_TextBox" TextAlignment="Left"
+                                         Value="{Binding SpecialOffersFilter.datetime_from, 
+                                    Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"/>
 
                                 <TextBlock Grid.Row="1" Text="От"
                                            IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
@@ -1330,8 +1334,9 @@
                                 <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
 
                                 <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
-                                         x:Name="SpecialOffers_DateTime_To_Filter_TextBox"
-                                         Value="{Binding SpecialOffersFilter.datetime_to, Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_59}}"/>
+                                         x:Name="SpecialOffers_DateTime_To_Filter_TextBox" TextAlignment="Left"
+                                         Value="{Binding SpecialOffersFilter.datetime_to, 
+                                    Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_59}}"/>
                                 <TextBlock Grid.Row="3" Text="До"
                                            IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
                                            Foreground="LightGray"
@@ -1366,10 +1371,10 @@
                                         <ColumnDefinition/>
                                     </Grid.ColumnDefinitions>
 
-                                    <xctk:IntegerUpDown Grid.Column="0" FontSize="16" Name="SpecialOffers_Discount_From_Filter_UpDown"
+                                    <xctk:IntegerUpDown Grid.Column="0" FontSize="16" Name="SpecialOffers_Discount_From_Filter_UpDown" TextAlignment="Left"
                                                         Value="{Binding SpecialOffersFilter.discount_from}" Minimum="0" Maximum="100"/>
 
-                                    <xctk:IntegerUpDown Grid.Column="2" FontSize="16" Name="SpecialOffers_Discount_To_Filter_UpDown"
+                                    <xctk:IntegerUpDown Grid.Column="2" FontSize="16" Name="SpecialOffers_Discount_To_Filter_UpDown" TextAlignment="Left"
                                                         Value="{Binding SpecialOffersFilter.discount_to}" Minimum="0" Maximum="100"/>
 
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
@@ -2465,7 +2470,7 @@
                             </Grid.RowDefinitions>
                             <TextBlock Text="Дата создания" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
                             <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
-                                                 x:Name="News_DateTime_From_Filter_TextBox"
+                                                 x:Name="News_DateTime_From_Filter_TextBox" TextAlignment="Left"
                                                  Value="{Binding NewsFilter.datetime_from, 
                                 Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_0}}"/>
 
@@ -2491,7 +2496,7 @@
                             <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
 
                             <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
-                                                 x:Name="News_DateTime_To_Filter_TextBox"
+                                                 x:Name="News_DateTime_To_Filter_TextBox" TextAlignment="Left"
                                                  Value="{Binding NewsFilter.datetime_to, 
                                 Converter={StaticResource DateTimeSecondsConverter}, ConverterParameter={StaticResource int_59}}"/>
                             <TextBlock Grid.Row="3" Text="До"
@@ -2840,7 +2845,7 @@
                             <TextBlock Text="Даты" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
 
                             <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
-                                                 x:Name="SalesVolume_DateTime_From_Filter_TextBox"
+                                                 x:Name="SalesVolume_DateTime_From_Filter_TextBox" TextAlignment="Left"
                                                  Value="{Binding SalesVolumeFilter.datetime_from, Converter={StaticResource DateTimeSecondsConverter}, 
                                 ConverterParameter={StaticResource int_0}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
@@ -2866,7 +2871,7 @@
                             <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
 
                             <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
-                                                 x:Name="SalesVolume_DateTime_To_Filter_TextBox"
+                                                 x:Name="SalesVolume_DateTime_To_Filter_TextBox" TextAlignment="Left"
                                                  Value="{Binding SalesVolumeFilter.datetime_to, Converter={StaticResource DateTimeSecondsConverter}, 
                                 ConverterParameter={StaticResource int_59}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock Grid.Row="3" Text="До"
@@ -3225,8 +3230,7 @@
             </Grid>
         </Grid>
 
-
-        <Grid Name="TopPromotions_Grid" Grid.Row="1" Visibility="Visible">
+        <Grid Name="TopPromotions_Grid" Grid.Row="1" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="Auto"/>
@@ -3264,10 +3268,10 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Даты" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+                            <TextBlock Text="Даты продаж" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
 
                             <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
-                                         x:Name="TopPromotions_DateTime_From_Filter_TextBox"
+                                         x:Name="TopPromotions_DateTime_From_Filter_TextBox" TextAlignment="Left"
                                          Value="{Binding TopPromotionsFilter.datetime_from, Converter={StaticResource DateTimeSecondsConverter}, 
                                 ConverterParameter={StaticResource int_0}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
@@ -3293,7 +3297,7 @@
                             <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
 
                             <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
-                                         x:Name="TopPromotions_DateTime_To_Filter_TextBox"
+                                         x:Name="TopPromotions_DateTime_To_Filter_TextBox" TextAlignment="Left"
                                          Value="{Binding TopPromotionsFilter.datetime_to, Converter={StaticResource DateTimeSecondsConverter}, 
                                 ConverterParameter={StaticResource int_59}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             <TextBlock Grid.Row="3" Text="До"
@@ -3316,7 +3320,7 @@
                             </TextBlock>
                         </Grid>
 
-                        <!--<Grid Grid.Row="2" Margin="0, 5">
+                        <Grid Grid.Row="2" Margin="0, 5">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
                                 <RowDefinition/>
@@ -3330,11 +3334,11 @@
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
 
-                                <xctk:IntegerUpDown Grid.Column="0" FontSize="16" Name="SalesVolume_TotalQuantity_From_Filter_UpDown"
-                                            Value="{Binding SalesVolumeFilter.total_quantity_from}" Minimum="0" TextAlignment="Left"/>
+                                <xctk:IntegerUpDown Grid.Column="0" FontSize="16" Name="TopPromotions_TotalQuantity_From_Filter_UpDown"
+                                            Value="{Binding TopPromotionsFilter.total_quantity_from}" Minimum="0" TextAlignment="Left"/>
 
-                                <xctk:IntegerUpDown Grid.Column="2" FontSize="16" Name="SalesVolume_TotalQuantity_To_Filter_UpDown"
-                                            Value="{Binding SalesVolumeFilter.total_quantity_to}" Minimum="0" TextAlignment="Left"/>
+                                <xctk:IntegerUpDown Grid.Column="2" FontSize="16" Name="TopPromotions_TotalQuantity_To_Filter_UpDown"
+                                            Value="{Binding TopPromotionsFilter.total_quantity_to}" Minimum="0" TextAlignment="Left"/>
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
                                    IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
@@ -3344,7 +3348,7 @@
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Text.Length, ElementName=SalesVolume_TotalQuantity_From_Filter_UpDown}" Value="0">
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=TopPromotions_TotalQuantity_From_Filter_UpDown}" Value="0">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -3360,7 +3364,7 @@
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Text.Length, ElementName=SalesVolume_TotalQuantity_To_Filter_UpDown}" Value="0">
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=TopPromotions_TotalQuantity_To_Filter_UpDown}" Value="0">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -3370,8 +3374,120 @@
 
                                 <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
                             </Grid>
-                        </Grid>-->
+                        </Grid>
+                        
+                        <Grid Grid.Row="3" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
 
+                            <TextBlock Text="Размер скидки" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <Grid Grid.Row="1" Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <xctk:IntegerUpDown Grid.Column="0" FontSize="16" Name="TopPromotions_Discount_From_Filter_UpDown"
+                                                    Value="{Binding TopPromotionsFilter.discount_from}" Minimum="0" Maximum="100" TextAlignment="Left"/>
+
+                                <xctk:IntegerUpDown Grid.Column="2" FontSize="16" Name="TopPromotions_Discount_To_Filter_UpDown"
+                                                    Value="{Binding TopPromotionsFilter.discount_to}" Minimum="0" Maximum="100" TextAlignment="Left"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=TopPromotions_Discount_From_Filter_UpDown}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="До"
+           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+           Foreground="LightGray"
+           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=TopPromotions_Discount_To_Filter_UpDown}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
+                            </Grid>
+                        </Grid>
+
+                        <Grid Grid.Row="4" Margin="0, 5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition Height="5"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Товар" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <TextBox Grid.Row="1" FontSize="16" x:Name="TopPromotions_Product_Filter_TextBox"
+                                     Text="{Binding TopPromotionsFilter.product_id, Converter={StaticResource StringToIntConverter}}"
+                                     TextChanged="TextBoxInt_PreviewTextChanged"/>
+                            <TextBlock Grid.Row="1" Text="Артикул"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=TopPromotions_Product_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <TextBox Grid.Row="3" FontSize="16" x:Name="TopPromotions_Product_Name_Filter_TextBox" Grid.ColumnSpan="2"
+                                     Text="{Binding TopPromotionsFilter.product_name, Converter={StaticResource TextToSerchableConverter}}"/>
+                            <TextBlock Grid.Row="3" Text="Название"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,5,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16" Grid.ColumnSpan="2">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=TopPromotions_Product_Name_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+
+                            <Button Grid.Column="1" Grid.Row="1" Style="{StaticResource Button_Style}" 
+                                    Click="TopPromotions_Find_Product_Filter_Button_Click" Content="Выбрать" 
+                                    Margin="5, 0, 0, 0" Padding="2"/>
+
+                        </Grid>
 
                         <Button Grid.Row="100" Style="{StaticResource Button_Style}" 
                                 Click="TopPromotions_Filter_Button_Click" Content="Фильтр"
@@ -3467,6 +3583,249 @@
                             <Style BasedOn="{StaticResource Button_Style}" TargetType="Button">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Items.Count, ElementName=TopPromotions_DataGrid}" Value="0">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <Grid Name="PickupPointsLoad_Grid" Grid.Row="1" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border BorderThickness="1px" BorderBrush="LightGray" Grid.Column="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Label Style="{StaticResource InfoField_Style}" HorizontalAlignment="Center" Content="Фильтр"/>
+
+                    <Grid Grid.Row="1" Margin="5, 0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="1" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Даты продаж" FontSize="16" Margin="0, 0, 0, 5" TextWrapping="Wrap"/>
+
+                            <xctk:DateTimePicker Grid.Row="1" Format="Custom" FormatString="g" FontSize="16"
+                                 x:Name="PickupPointsLoad_DateTime_From_Filter_TextBox" TextAlignment="Left"
+                                 Value="{Binding PickupPointsLoadFilter.datetime_from, Converter={StaticResource DateTimeSecondsConverter}, 
+                        ConverterParameter={StaticResource int_0}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Grid.Row="1" Text="От"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=PickupPointsLoad_DateTime_From_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=PickupPointsLoad_DateTime_From_Filter_TextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <TextBlock Grid.Row="2" Text="|" HorizontalAlignment="Center" FontSize="16" Margin="0, 0, 0, 1.5"/>
+
+                            <xctk:DateTimePicker Grid.Row="3" Format="Custom" FormatString="g" FontSize="16"
+                                 x:Name="PickupPointsLoad_DateTime_To_Filter_TextBox" TextAlignment="Left"
+                                 Value="{Binding PickupPointsLoadFilter.datetime_to, Converter={StaticResource DateTimeSecondsConverter}, 
+                        ConverterParameter={StaticResource int_59}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Grid.Row="3" Text="До"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=PickupPointsLoad_DateTime_To_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=PickupPointsLoad_DateTime_To_Filter_TextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <Grid Grid.Row="2" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Всего продано" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <Grid Grid.Row="1" Height="Auto">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <xctk:IntegerUpDown Grid.Column="0" FontSize="16" Name="PickupPointsLoad_TotalQuantity_From_Filter_UpDown"
+                                    Value="{Binding PickupPointsLoadFilter.total_quantity_from}" Minimum="0" TextAlignment="Left"/>
+
+                                <xctk:IntegerUpDown Grid.Column="2" FontSize="16" Name="PickupPointsLoad_TotalQuantity_To_Filter_UpDown"
+                                    Value="{Binding PickupPointsLoadFilter.total_quantity_to}" Minimum="0" TextAlignment="Left"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="От"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=PickupPointsLoad_TotalQuantity_From_Filter_UpDown}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="До"
+                                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                           Foreground="LightGray"
+                                           FontSize="16">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text.Length, ElementName=PickupPointsLoad_TotalQuantity_To_Filter_UpDown}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Grid.Column="1" Text="-" FontSize="16"/>
+                            </Grid>
+                        </Grid>
+
+                        <Grid Grid.Row="3" Margin="0, 5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Адрес" FontSize="16" Margin="0, 0, 0, 5"/>
+                            <TextBox FontSize="16" Grid.Row="1" Name="PickupPointsLoad_Address_Filter_TextBox"
+                                     Text="{Binding PickupPointsLoadFilter.address, Converter={StaticResource TextToSerchableConverter}}"/>
+                            <TextBlock Grid.Row="1" Text="Адрес"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,5,0"
+                                       Foreground="LightGray"
+                                       FontSize="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text.Length, ElementName=PickupPointsLoad_Address_Filter_TextBox}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <Button Grid.Row="100" Style="{StaticResource Button_Style}" 
+                                Click="PickupPointsLoad_Filter_Button_Click" Content="Фильтр"
+                                Margin="5" Padding="5" Height="Auto"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1" BorderThickness="1" Width="5" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DataGrid ItemsSource="{Binding Statistics, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                          FontSize="16" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          EnableColumnVirtualization="False"
+                          EnableRowVirtualization="True"
+                          SelectionMode="Extended"
+                          x:Name="PickupPointsLoad_DataGrid">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn SortMemberPath="address" Width="500">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource DataGridCell_NoBorder_Style}">
+                                    <Style.Setters>
+                                        <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+                                    </Style.Setters>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding address}" TextWrapping="Wrap" Margin="3, 0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="Адрес" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Binding="{Binding order_count}" IsReadOnly="True" Width="160">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="Всего заказов" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </DataGridTextColumn.Header>
+                            <DataGridTextColumn.CellStyle>
+                                <Style BasedOn="{StaticResource DataGridCell_NoBorder_Style}" TargetType="DataGridCell">
+                                    <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Grid Grid.Row="1">
+                    <Button Grid.Row="100"
+                            Click="PickupPointsLoad_SaveStatistics_Button_Click" Content="Сохранить данные"
+                            Margin="5" Padding="5" Height="Auto">
+                        <Button.Style>
+                            <Style BasedOn="{StaticResource Button_Style}" TargetType="Button">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Items.Count, ElementName=PickupPointsLoad_DataGrid}" Value="0">
                                         <Setter Property="IsEnabled" Value="False" />
                                     </DataTrigger>
                                 </Style.Triggers>
